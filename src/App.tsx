@@ -938,16 +938,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 shrink-0">
-            <CountrySelector
-              selectedCountry={selectedCountry}
-              selectedLang={selectedLang}
-              onSelectCountryAndLang={(country, lang) => {
-                setSelectedCountry(country);
-                setSelectedLang(lang);
-              }}
-            />
-
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
             <button
               onClick={handleInstallClick}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
@@ -956,6 +947,15 @@ export default function App() {
               <Download className="w-3.5 h-3.5" />
               <span>{getTranslation(selectedLang, 'downloadApp')}</span>
             </button>
+
+            <CountrySelector
+              selectedCountry={selectedCountry}
+              selectedLang={selectedLang}
+              onSelectCountryAndLang={(country, lang) => {
+                setSelectedCountry(country);
+                setSelectedLang(lang);
+              }}
+            />
 
             {/* Desktop badge */}
             <div className="hidden lg:flex items-center space-x-2 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
@@ -976,7 +976,7 @@ export default function App() {
       <Breadcrumbs items={currentConfig.breadcrumbs} onNavigate={handleNavigate} />
 
       {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {!isValidRoute(currentRoute) && <NotFoundPage onNavigate={handleNavigate} />}
 
         {currentRoute === '/background-remover' && <BackgroundRemoverTool />}
@@ -1149,14 +1149,6 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleNavigate('/background-remover')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-                  title="Remove background from this image"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Remove BG</span>
-                </button>
                 {(rotation !== 0 || flipH || flipV || cropBox) && (
                   <button
                     onClick={handleResetEdits}
