@@ -9,7 +9,6 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-        'onnxruntime-web/webgpu': 'onnxruntime-web',
       },
     },
     server: {
