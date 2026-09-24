@@ -1,0 +1,6 @@
+{
+  "name": "Resize files",
+  "description": "Compress photos to exact target file sizes in KB for government forms, exams, and job applications 100% client-side.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
