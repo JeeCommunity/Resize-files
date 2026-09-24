@@ -74,6 +74,15 @@ export const SEO_ROUTES: Record<string, SeoRouteConfig> = {
     schemaType: 'WebApplication',
     includeInSitemap: true,
   },
+  '/background-remover': {
+    path: '/background-remover',
+    title: 'Background Remover – Remove Image Background Online',
+    description: 'Remove backgrounds from images directly in your browser. Create transparent PNG images with a fast, privacy-focused background remover.',
+    canonical: `${BASE_URL}/background-remover`,
+    breadcrumbs: [{ label: 'Home', path: '/' }, { label: 'Background Remover', path: '/background-remover' }],
+    schemaType: 'WebApplication',
+    includeInSitemap: true,
+  },
   '/png-to-jpg': {
     path: '/png-to-jpg',
     title: 'PNG to JPG Converter – Convert PNG Images to JPG',

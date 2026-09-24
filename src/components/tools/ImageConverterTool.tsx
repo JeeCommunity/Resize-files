@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, RefreshCw, Check, ArrowRight, Image as ImageIcon, ShieldCheck, HelpCircle } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ImageConverterToolProps {
   route: string;
@@ -20,6 +21,7 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
   mimeType,
   extension,
 }) => {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -146,10 +148,10 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
             <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
               <Upload className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">Upload {fromFormat} Image</h3>
-            <p className="text-xs text-slate-500 mb-4">Drag & drop your file here or click to browse</p>
+            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('dragAndDrop')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('supports')}</p>
             <button className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              Select {fromFormat} File
+              {t('choosePhoto')}
             </button>
           </div>
         ) : (

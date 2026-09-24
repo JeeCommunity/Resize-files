@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+/* Google Translate Widget Styling Overrides */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+.goog-logo-link {
+  display: none !important;
+}
+.goog-te-gadget {
+  color: transparent !important;
+}
+.goog-te-gadget span {
+  display: none !important;
+}

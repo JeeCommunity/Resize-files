@@ -32,7 +32,9 @@ import { CropModal } from './components/CropModal';
 import { jsPDF } from 'jspdf';
 import { Menu } from 'lucide-react';
 import { NavigationDrawer } from './components/NavigationDrawer';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { ImageConverterTool } from './components/tools/ImageConverterTool';
+import { BackgroundRemoverTool } from './components/tools/BackgroundRemoverTool';
 import { ImageToPdfTool } from './components/tools/ImageToPdfTool';
 import { PdfToImageTool } from './components/tools/PdfToImageTool';
 import { MergePdfTool } from './components/tools/MergePdfTool';
@@ -49,6 +51,11 @@ import { NotFoundPage } from './components/tools/NotFoundPage';
 import { Breadcrumbs } from './components/Breadcrumbs';
 import { SEO_ROUTES } from './seo/seoConfig';
 import { Footer } from './components/Footer';
+import { AdminDashboard } from './components/AdminDashboard';
+import { FeedbackWidget } from './components/FeedbackWidget';
+import { CountrySelector, CountryLanguages, COUNTRIES_DATA } from './components/CountrySelector';
+import { getTranslation, SupportedLanguage } from './i18n/translations';
+import { trackEvent } from './utils/analytics';
 
 interface CompressionResult {
   blob: Blob;
@@ -81,6 +88,20 @@ const EXAM_PRESETS: ExamPreset[] = [
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState<string>(window.location.pathname || '/');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [selectedCountry, setSelectedCountry] = useState<CountryLanguages>(() => {
+    try {
+      const saved = localStorage.getItem('resizefiles_country');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return COUNTRIES_DATA[0];
+  });
+  const [selectedLang, setSelectedLang] = useState<SupportedLanguage>(() => {
+    try {
+      const saved = localStorage.getItem('resizefiles_lang');
+      if (saved) return saved as SupportedLanguage;
+    } catch (e) {}
+    return 'en';
+  });
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -120,12 +141,14 @@ export default function App() {
 
   const VALID_ROUTES = [
     '/',
+    '/admin',
     '/image-resizer',
     '/compress-image',
     '/photo-resizer',
     '/signature-resizer',
     '/passport-photo-resizer',
     '/jpg-to-png',
+    '/background-remover',
     '/png-to-jpg',
     '/jpg-to-webp',
     '/png-to-webp',
@@ -145,6 +168,13 @@ export default function App() {
     '/terms',
     '/contact'
   ];
+
+  useEffect(() => {
+    trackEvent('page_view', undefined, currentRoute);
+    if (currentRoute !== '/' && currentRoute !== '/admin' && !currentRoute.startsWith('/about') && !currentRoute.startsWith('/privacy') && !currentRoute.startsWith('/terms') && !currentRoute.startsWith('/contact')) {
+      trackEvent('tool_open', currentRoute);
+    }
+  }, [currentRoute]);
 
   const isTargetSizeRoute = (route: string) => /^\/compress-image-to-\d+kb$/.test(route);
   const isValidRoute = (route: string) => VALID_ROUTES.includes(route) || isTargetSizeRoute(route);
@@ -874,7 +904,8 @@ export default function App() {
   const sizeDiffPercent = originalSize > 0 && result ? ((originalSize - result.sizeBytes) / originalSize) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-500 selection:text-white">
+    <LanguageProvider lang={selectedLang}>
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-500 selection:text-white">
       {/* Top Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
@@ -896,31 +927,40 @@ export default function App() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 whitespace-nowrap">
-                    Resize files
+                    {getTranslation(selectedLang, 'appTitle')}
                   </span>
                   <span className="hidden sm:inline-flex text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
                     100% Secure
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 hidden sm:block truncate">Exact photo size compressor for government forms & exams</p>
+                <p className="text-xs text-slate-500 hidden sm:block truncate">{getTranslation(selectedLang, 'appSubtitle')}</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-2 shrink-0">
+            <CountrySelector
+              selectedCountry={selectedCountry}
+              selectedLang={selectedLang}
+              onSelectCountryAndLang={(country, lang) => {
+                setSelectedCountry(country);
+                setSelectedLang(lang);
+              }}
+            />
+
             <button
               onClick={handleInstallClick}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
               title="Install ResizeFiles App on your device"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Download App</span>
+              <span>{getTranslation(selectedLang, 'downloadApp')}</span>
             </button>
 
             {/* Desktop badge */}
             <div className="hidden lg:flex items-center space-x-2 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Files never leave your device</span>
+              <span>{getTranslation(selectedLang, 'secureBadge')}</span>
             </div>
           </div>
         </div>
@@ -939,6 +979,7 @@ export default function App() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {!isValidRoute(currentRoute) && <NotFoundPage onNavigate={handleNavigate} />}
 
+        {currentRoute === '/background-remover' && <BackgroundRemoverTool />}
         {currentRoute === '/jpg-to-png' && (
           <ImageConverterTool route="/jpg-to-png" title="Convert JPG to PNG Online" description="Convert JPG or JPEG images to PNG format with high quality." fromFormat="JPG" toFormat="PNG" mimeType="image/png" extension="png" />
         )}
@@ -981,6 +1022,7 @@ export default function App() {
         {currentRoute === '/privacy' && <PrivacyPage />}
         {currentRoute === '/terms' && <TermsPage />}
         {currentRoute === '/contact' && <ContactPage />}
+        {currentRoute === '/admin' && <AdminDashboard onNavigate={handleNavigate} />}
 
         {(currentRoute === '/' || currentRoute.match(/\/compress-image-to-\d+kb/) || generalSeoMatch) && (!originalFile ? (
           /* Upload View */
@@ -991,13 +1033,13 @@ export default function App() {
                   {currentRoute.match(/\/compress-image-to-(\d+)kb/)
                     ? `Compress Image to ${currentRoute.match(/\/compress-image-to-(\d+)kb/)![1]}KB Online`
                     : currentRoute === '/'
-                    ? 'Resize and Compress Images Online'
+                    ? getTranslation(selectedLang, 'heroTitle')
                     : 'Resize and Optimize Photos Online'}
                 </h1>
                 <p className="mt-3 text-base text-slate-600">
                   {currentRoute.match(/\/compress-image-to-(\d+)kb/)
                     ? `Instantly shrink JPG, PNG, or WebP images to exactly or under ${currentRoute.match(/\/compress-image-to-(\d+)kb/)![1]} KB while preserving visual clarity for official portals.`
-                    : 'Resize photos, compress images to a specific KB size, convert image formats, and prepare photos for forms, exams and applications. Your files are processed directly in your browser.'}
+                    : getTranslation(selectedLang, 'heroSubtitle')}
                 </p>
               </div>
 
@@ -1022,25 +1064,25 @@ export default function App() {
                 <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
                   <Upload className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-1">Drag and drop your photo here</h3>
-                <p className="text-sm text-slate-500 mb-6">Supports JPG, PNG, and WebP up to 25MB</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-1">{getTranslation(selectedLang, 'dragAndDrop')}</h3>
+                <p className="text-sm text-slate-500 mb-6">{getTranslation(selectedLang, 'supports')}</p>
                 
                 <button
                   type="button"
                   className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm shadow-sm hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                 >
-                  Choose Photo from Device
+                  {getTranslation(selectedLang, 'choosePhoto')}
                 </button>
 
                 <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500">
                   <span className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-emerald-600" /> 100% Client-Side
+                    <Lock className="w-3.5 h-3.5 text-emerald-600" /> {getTranslation(selectedLang, 'clientSide')}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-amber-500" /> Lossless Source Engine
+                    <Zap className="w-3.5 h-3.5 text-amber-500" /> {getTranslation(selectedLang, 'lossless')}
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <Award className="w-3.5 h-3.5 text-indigo-500" /> Exam Standard Compliant
+                    <Award className="w-3.5 h-3.5 text-indigo-500" /> {getTranslation(selectedLang, 'examCompliant')}
                   </span>
                 </div>
               </div>
@@ -1050,9 +1092,9 @@ export default function App() {
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-emerald-600" /> Common Exam & Form Requirements
+                  <FileText className="w-4 h-4 text-emerald-600" /> {getTranslation(selectedLang, 'examPresetsHeader')}
                 </h3>
-                <span className="text-xs text-slate-400">Click any preset to apply</span>
+                <span className="text-xs text-slate-400">{getTranslation(selectedLang, 'clickPreset')}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {EXAM_PRESETS.map((preset, idx) => (
@@ -1107,6 +1149,14 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleNavigate('/background-remover')}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                  title="Remove background from this image"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Remove BG</span>
+                </button>
                 {(rotation !== 0 || flipH || flipV || cropBox) && (
                   <button
                     onClick={handleResetEdits}
@@ -1543,7 +1593,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer onNavigate={handleNavigate} />
+      <Footer onNavigate={handleNavigate} selectedCountry={selectedCountry} selectedLang={selectedLang} />
 
       {/* Crop Modal */}
       <CropModal
@@ -1563,7 +1613,10 @@ export default function App() {
         }}
         onClose={() => setIsCropModalOpen(false)}
       />
+
+      <FeedbackWidget currentToolName={currentRoute} />
     </div>
+    </LanguageProvider>
   );
 }
 
