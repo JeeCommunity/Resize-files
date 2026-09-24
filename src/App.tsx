@@ -81,14 +81,37 @@ const EXAM_PRESETS: ExamPreset[] = [
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState<string>(window.location.pathname || '/');
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     const handlePopState = () => {
       setCurrentRoute(window.location.pathname || '/');
     };
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      alert('To install ResizeFiles on your device:\n\n• On Android/Chrome: Tap browser menu (⋮) and select "Install app" or "Add to Home screen".\n• On iPhone/Safari: Tap Share (⎋) and select "Add to Home Screen".');
+    }
+  };
 
   const handleNavigate = (route: string) => {
     window.history.pushState({}, '', route);
@@ -884,16 +907,20 @@ export default function App() {
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="flex items-center space-x-2 shrink-0">
+            <button
+              onClick={handleInstallClick}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              title="Install ResizeFiles App on your device"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download App</span>
+            </button>
+
             {/* Desktop badge */}
-            <div className="hidden md:flex items-center space-x-2 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+            <div className="hidden lg:flex items-center space-x-2 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Files never leave your device</span>
-            </div>
-            {/* Mobile compact badge */}
-            <div className="md:hidden flex items-center space-x-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>100% Secure</span>
             </div>
           </div>
         </div>
