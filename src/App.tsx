@@ -42,8 +42,12 @@ import { CompressPdfTool } from './components/tools/CompressPdfTool';
 import { TargetSizeSeoContent } from './components/tools/TargetSizeSeoContent';
 import { AboutPage } from './components/tools/AboutPage';
 import { PrivacyPage } from './components/tools/PrivacyPage';
+import { TermsPage } from './components/tools/TermsPage';
 import { ContactPage } from './components/tools/ContactPage';
 import { GeneralSeoPage } from './components/tools/GeneralSeoPage';
+import { NotFoundPage } from './components/tools/NotFoundPage';
+import { Breadcrumbs } from './components/Breadcrumbs';
+import { SEO_ROUTES } from './seo/seoConfig';
 import { Footer } from './components/Footer';
 
 interface CompressionResult {
@@ -90,6 +94,134 @@ export default function App() {
     window.history.pushState({}, '', route);
     setCurrentRoute(route);
   };
+
+  const VALID_ROUTES = [
+    '/',
+    '/image-resizer',
+    '/compress-image',
+    '/photo-resizer',
+    '/signature-resizer',
+    '/passport-photo-resizer',
+    '/jpg-to-png',
+    '/png-to-jpg',
+    '/jpg-to-webp',
+    '/png-to-webp',
+    '/webp-to-jpg',
+    '/webp-to-png',
+    '/image-to-pdf',
+    '/jpg-to-pdf',
+    '/png-to-pdf',
+    '/pdf-to-jpg',
+    '/pdf-to-png',
+    '/merge-pdf',
+    '/split-pdf',
+    '/rotate-pdf',
+    '/compress-pdf',
+    '/about',
+    '/privacy',
+    '/terms',
+    '/contact'
+  ];
+
+  const isTargetSizeRoute = (route: string) => /^\/compress-image-to-\d+kb$/.test(route);
+  const isValidRoute = (route: string) => VALID_ROUTES.includes(route) || isTargetSizeRoute(route);
+
+  const getSeoConfig = () => {
+    if (SEO_ROUTES[currentRoute]) return SEO_ROUTES[currentRoute];
+    if (isTargetSizeRoute(currentRoute)) {
+      const kbMatch = currentRoute.match(/(\d+)/);
+      const kb = kbMatch ? kbMatch[1] : '50';
+      return {
+        path: currentRoute,
+        title: `Compress Image to ${kb}KB Online – Free Tool`,
+        description: `Instantly compress photos and images strictly under ${kb} KB for government exams and application portals.`,
+        canonical: `https://resizefiles.pages.dev${currentRoute}`,
+        breadcrumbs: [{ label: 'Home', path: '/' }, { label: `Compress to ${kb}KB`, path: currentRoute }],
+        schemaType: 'WebApplication' as const,
+        includeInSitemap: true
+      };
+    }
+    return {
+      path: currentRoute,
+      title: 'Page Not Found – Resize Files',
+      description: 'The requested page could not be found.',
+      canonical: `https://resizefiles.pages.dev${currentRoute}`,
+      breadcrumbs: [{ label: 'Home', path: '/' }, { label: 'Not Found', path: currentRoute }],
+      schemaType: 'WebPage' as const,
+      includeInSitemap: false
+    };
+  };
+
+  const currentConfig = getSeoConfig();
+
+  useEffect(() => {
+    document.title = currentConfig.title;
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', currentConfig.description);
+
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', currentConfig.canonical);
+
+    const updateOg = (property: string, content: string) => {
+      let tag = document.querySelector(`meta[property="${property}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    updateOg('og:title', currentConfig.title);
+    updateOg('og:description', currentConfig.description);
+    updateOg('og:url', currentConfig.canonical);
+    updateOg('og:type', 'website');
+    updateOg('og:site_name', 'Resize Files');
+
+    let jsonLd = document.querySelector('#dynamic-seo-schema');
+    if (!jsonLd) {
+      jsonLd = document.createElement('script');
+      jsonLd.setAttribute('type', 'application/ld+json');
+      jsonLd.setAttribute('id', 'dynamic-seo-schema');
+      document.head.appendChild(jsonLd);
+    }
+
+    const schemaData = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": currentConfig.schemaType,
+          "name": currentConfig.title,
+          "url": currentConfig.canonical,
+          "description": currentConfig.description,
+          "applicationCategory": "UtilityApplication",
+          "operatingSystem": "All"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": currentConfig.breadcrumbs.map((b, idx) => ({
+            "@type": "ListItem",
+            "position": idx + 1,
+            "name": b.label,
+            "item": `https://resizefiles.pages.dev${b.path}`
+          }))
+        }
+      ]
+    };
+
+    jsonLd.textContent = JSON.stringify(schemaData);
+  }, [currentConfig]);
 
   useEffect(() => {
     const match = currentRoute.match(/\/compress-image-to-(\d+)kb/);
@@ -774,8 +906,12 @@ export default function App() {
         onNavigate={handleNavigate}
       />
 
+      <Breadcrumbs items={currentConfig.breadcrumbs} onNavigate={handleNavigate} />
+
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {!isValidRoute(currentRoute) && <NotFoundPage onNavigate={handleNavigate} />}
+
         {currentRoute === '/jpg-to-png' && (
           <ImageConverterTool route="/jpg-to-png" title="Convert JPG to PNG Online" description="Convert JPG or JPEG images to PNG format with high quality." fromFormat="JPG" toFormat="PNG" mimeType="image/png" extension="png" />
         )}
@@ -816,6 +952,7 @@ export default function App() {
 
         {currentRoute === '/about' && <AboutPage onNavigate={handleNavigate} />}
         {currentRoute === '/privacy' && <PrivacyPage />}
+        {currentRoute === '/terms' && <TermsPage />}
         {currentRoute === '/contact' && <ContactPage />}
 
         {(currentRoute === '/' || currentRoute.match(/\/compress-image-to-\d+kb/) || generalSeoMatch) && (!originalFile ? (

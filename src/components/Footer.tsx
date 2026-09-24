@@ -51,6 +51,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <ul className="space-y-2 text-xs">
             <li><button onClick={() => onNavigate('/about')} className="hover:text-white transition-colors cursor-pointer">About Us</button></li>
             <li><button onClick={() => onNavigate('/privacy')} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button></li>
+            <li><button onClick={() => onNavigate('/terms')} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button></li>
             <li><button onClick={() => onNavigate('/contact')} className="hover:text-white transition-colors cursor-pointer">Contact Us</button></li>
           </ul>
         </div>
@@ -60,6 +61,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         <div>&copy; {new Date().getFullYear()} Resize files. All rights reserved. 100% Client-Side Processing.</div>
         <div className="flex items-center space-x-6">
           <button onClick={() => onNavigate('/privacy')} className="hover:text-slate-400 cursor-pointer">Privacy</button>
+          <button onClick={() => onNavigate('/terms')} className="hover:text-slate-400 cursor-pointer">Terms</button>
           <button onClick={() => onNavigate('/about')} className="hover:text-slate-400 cursor-pointer">About</button>
           <button onClick={() => onNavigate('/contact')} className="hover:text-slate-400 cursor-pointer">Contact</button>
         </div>
