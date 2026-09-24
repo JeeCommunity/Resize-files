@@ -908,7 +908,7 @@ export default function App() {
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-500 selection:text-white">
       {/* Top Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-2">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <button
               onClick={() => setIsDrawerOpen(true)}
@@ -938,7 +938,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="flex flex-col items-end gap-1.5 shrink-0 my-1">
             <button
               onClick={handleInstallClick}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
