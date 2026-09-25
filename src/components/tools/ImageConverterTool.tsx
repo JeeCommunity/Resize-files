@@ -22,9 +22,11 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
   extension,
 }) => {
   const { t } = useLanguage();
-  const toolKey = route.replace('/', '').replace(/-/g, '');
-  const localizedTitle = t(toolKey + 'Title') || title;
-  const localizedDesc = t(toolKey + 'Desc') || description;
+  const cleanRoute = route.replace('/', '');
+  const parts = cleanRoute.split('-');
+  const camelKey = parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+  const localizedTitle = t(camelKey + 'Title') || title;
+  const localizedDesc = t(camelKey + 'Desc') || description;
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
