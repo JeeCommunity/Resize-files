@@ -218,6 +218,15 @@ export const SEO_ROUTES: Record<string, SeoRouteConfig> = {
     schemaType: 'WebApplication',
     includeInSitemap: true,
   },
+  '/pdf-to-image': {
+    path: '/pdf-to-image',
+    title: 'PDF to Image Converter – Extract PDF Pages to JPG & PNG',
+    description: 'Convert PDF documents into separate individual images directly in your browser. Extract all pages or specific pages instantly.',
+    canonical: `${BASE_URL}/pdf-to-image`,
+    breadcrumbs: [{ label: 'Home', path: '/' }, { label: 'PDF Tools', path: '/pdf-to-jpg' }, { label: 'PDF to Image', path: '/pdf-to-image' }],
+    schemaType: 'WebApplication',
+    includeInSitemap: true,
+  },
   '/merge-pdf': {
     path: '/merge-pdf',
     title: 'Merge PDF Online – Combine PDF Files',

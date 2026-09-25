@@ -69,6 +69,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     pngToPdf: 'PNG to PDF',
     pdfToJpg: 'PDF to JPG',
     pdfToPng: 'PDF to PNG',
+    pdfToImage: 'PDF to Image',
     mergePdf: 'Merge PDF',
     splitPdf: 'Split PDF',
     rotatePdf: 'Rotate PDF',
@@ -220,7 +221,33 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     pdfToJpgTitle: 'Convert PDF to JPG Online',
     pdfToJpgDesc: 'Extract all pages of a PDF into high-quality JPG images.',
     pdfToPngTitle: 'Convert PDF to PNG Online',
-    pdfToPngDesc: 'Extract all pages of a PDF into high-quality PNG images.'
+    pdfToPngDesc: 'Extract all pages of a PDF into high-quality PNG images.',
+    pdfToImageTitle: 'Convert PDF to Images Online',
+    pdfToImageDesc: 'Extract all pages of any PDF document into individual high-resolution JPG or PNG images instantly.',
+    outputFormatLabel: 'Output Format',
+    jpgImage: 'JPG Image',
+    pngImage: 'PNG Image',
+    jpgQuality: 'JPG Quality',
+    smallerSize: 'Smaller size',
+    goodQuality: 'Good',
+    highQuality: 'High',
+    maximumQuality: 'Maximum',
+    resolutionScale: 'Resolution / Scale',
+    standardScale: 'Standard (1x)',
+    highScale: 'High Quality (1.5x)',
+    ultraScale: 'Ultra HD (2x)',
+    pagesToConvert: 'Pages to Convert',
+    allPages: 'All Pages',
+    customPages: 'Custom Pages',
+    enterPageNumbers: 'Enter Page Numbers (comma separated, e.g. 1, 3, 5-7):',
+    convertPdfButton: 'Convert PDF to',
+    preparingConversion: 'Preparing conversion...',
+    cancelConversion: 'Cancel Conversion',
+    conversionCancelled: 'Conversion cancelled.',
+    pagesSuccessfullyConverted: 'pages successfully converted',
+    downloadAllZip: 'Download All as ZIP',
+    generatingZip: 'Generating ZIP...',
+    viewFullSize: 'View Full Size'
   },
   hi: {
     appTitle: 'रिसाइज फाइल्स',
@@ -441,7 +468,33 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     pdfToJpgTitle: 'ऑनलाइन PDF को JPG में बदलें',
     pdfToJpgDesc: 'पीडीएफ के सभी पृष्ठों को उच्च गुणवत्ता वाली JPG छवियों में निकालें।',
     pdfToPngTitle: 'ऑनलाइन PDF को PNG में बदलें',
-    pdfToPngDesc: 'पीडीएफ के सभी पृष्ठों को उच्च गुणवत्ता वाली PNG छवियों में निकालें।'
+    pdfToPngDesc: 'पीडीएफ के सभी पृष्ठों को उच्च गुणवत्ता वाली PNG छवियों में निकालें।',
+    pdfToImageTitle: 'ऑनलाइन PDF को इमेज में बदलें',
+    pdfToImageDesc: 'किसी भी पीडीएफ दस्तावेज़ के सभी पृष्ठों को तुरंत अलग-अलग उच्च-रिज़ॉल्यूशन JPG या PNG छवियों में निकालें।',
+    outputFormatLabel: 'आउटपुट फॉर्मेट',
+    jpgImage: 'JPG इमेज',
+    pngImage: 'PNG इमेज',
+    jpgQuality: 'JPG क्वालिटी',
+    smallerSize: 'छोटा साइज़',
+    goodQuality: 'अच्छा',
+    highQuality: 'उच्च',
+    maximumQuality: 'अधिकतम',
+    resolutionScale: 'रिज़ॉल्यूशन / स्केल',
+    standardScale: 'स्टैंडर्ड (1x)',
+    highScale: 'हाई क्वालिटी (1.5x)',
+    ultraScale: 'अल्ट्रा HD (2x)',
+    pagesToConvert: 'पेज चुनें',
+    allPages: 'सभी पेज',
+    customPages: 'कस्टम पेज',
+    enterPageNumbers: 'पेज नंबर दर्ज करें (कॉमा से अलग करें, जैसे 1, 3, 5-7):',
+    convertPdfButton: 'PDF को इसमें बदलें',
+    preparingConversion: 'कन्वर्ट करने की तैयारी हो रही है...',
+    cancelConversion: 'कवर्शन रद्द करें',
+    conversionCancelled: 'कवर्शन रद्द कर दिया गया।',
+    pagesSuccessfullyConverted: 'पेज सफलतापूर्वक कन्वर्ट हो गए',
+    downloadAllZip: 'सभी को ZIP के रूप में डाउनलोड करें',
+    generatingZip: 'ZIP बन रही है...',
+    viewFullSize: 'पूर्ण आकार देखें'
   },
   es: {
     appTitle: 'Redimensionar archivos',
@@ -511,6 +564,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     pngToPdf: 'PNG a PDF',
     pdfToJpg: 'PDF a JPG',
     pdfToPng: 'PDF a PNG',
+    pdfToImage: 'PDF a Imagen',
     mergePdf: 'Unir PDF',
     splitPdf: 'Dividir PDF',
     rotatePdf: 'Rotar PDF',
@@ -1472,7 +1526,36 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     addMoreImages: '+ আরও ছবি যোগ করুন',
     generatePdfFromImages: 'ছবি থেকে PDF তৈরি করুন',
     downloadPdf: 'PDF ডাউনলোড করুন',
-    startOver: 'আবার শুরু করুন'
+    startOver: 'আবার শুরু করুন',
+
+    pdfToImage: 'PDF থেকে ইমেজ',
+    pdfToImageConverter: 'PDF থেকে ইমেজ কনভার্টার',
+    pdfToImageTitle: 'অনলাইনে PDF থেকে ইমেজ কনভার্ট করুন',
+    pdfToImageDesc: 'যেকোনো PDF ডকুমেন্টের সমস্ত পেজ তাৎক্ষণিকভাবে উচ্চ-রেজোলিউশন JPG বা PNG ইমেজে রূপান্তর করুন।',
+    outputFormatLabel: 'আউটপুট ফরম্যাট',
+    jpgImage: 'JPG ইমেজ',
+    pngImage: 'PNG ইমেজ',
+    jpgQuality: 'JPG কোয়ালিটি',
+    smallerSize: 'ছোট সাইজ',
+    goodQuality: 'ভালো',
+    highQuality: 'উচ্চ',
+    maximumQuality: 'সর্বোচ্চ',
+    resolutionScale: 'রেজোলিউশন / স্কেল',
+    standardScale: 'স্ট্যান্ডার্ড (1x)',
+    highScale: 'উচ্চ কোয়ালিটি (1.5x)',
+    ultraScale: 'আল্ট্রা HD (2x)',
+    pagesToConvert: 'কনভার্ট করার পেজ',
+    allPages: 'সকল পেজ',
+    customPages: 'পছন্দমতো পেজ',
+    enterPageNumbers: 'পেজ নম্বর লিখুন (কমা দিয়ে আলাদা করুন, যেমন: 1, 3, 5-7):',
+    convertPdfButton: 'PDF কনভার্ট করুন',
+    preparingConversion: 'প্রস্তুতি চলছে...',
+    cancelConversion: 'কনভার্শন বাতিল করুন',
+    conversionCancelled: 'কনভার্শন বাতিল করা হয়েছে।',
+    pagesSuccessfullyConverted: 'টি পেজ সফলভাবে কনভার্ট হয়েছে',
+    downloadAllZip: 'সবগুলো ZIP হিসেবে ডাউনলোড করুন',
+    generatingZip: 'ZIP তৈরি হচ্ছে...',
+    viewFullSize: 'পূর্ণ আকার দেখুন'
   },
   mr: {
     appTitle: 'फाईल आकार बदला',
@@ -1861,8 +1944,11 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
 };
 
 export function getTranslation(lang: SupportedLanguage, key: string): string {
-  if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) {
+  if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key] !== undefined && TRANSLATIONS[lang][key] !== '') {
     return TRANSLATIONS[lang][key];
   }
-  return TRANSLATIONS['en'][key] || key;
+  if (TRANSLATIONS['en'] && TRANSLATIONS['en'][key] !== undefined) {
+    return TRANSLATIONS['en'][key];
+  }
+  return key;
 }

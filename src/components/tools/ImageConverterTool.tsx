@@ -32,12 +32,17 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultSize, setResultSize] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [processingProgress, setProcessingProgress] = useState<number>(0);
+  const [customFilename, setCustomFilename] = useState<string>('');
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [bgChoice, setBgChoice] = useState<'white' | 'black' | 'transparent'>('white');
   const [dragOver, setDragOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelected = (selectedFile: File) => {
     setFile(selectedFile);
+    const baseName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) || 'converted';
+    setCustomFilename(baseName);
     setPreviewUrl(URL.createObjectURL(selectedFile));
     setResultUrl(null);
     processImage(selectedFile, mimeType, bgChoice);
@@ -45,20 +50,23 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
 
   const processImage = (imgFile: File, targetMime: string, bg: 'white' | 'black' | 'transparent') => {
     setIsProcessing(true);
+    setProcessingProgress(20);
     const reader = new FileReader();
     reader.onload = (e) => {
+      setProcessingProgress(50);
       const img = new Image();
       img.onload = () => {
+        setProcessingProgress(75);
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           setIsProcessing(false);
+          setProcessingProgress(0);
           return;
         }
 
-        // Handle background color for JPG (which doesn't support transparency)
         if (targetMime === 'image/jpeg') {
           ctx.fillStyle = bg === 'black' ? '#000000' : '#ffffff';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -71,6 +79,7 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
             setResultUrl(URL.createObjectURL(blob));
             setResultSize(blob.size);
           }
+          setProcessingProgress(100);
           setIsProcessing(false);
         }, targetMime, 0.92);
       };
@@ -88,13 +97,32 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
 
   const handleDownload = () => {
     if (!resultUrl || !file) return;
-    const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || 'converted';
-    const link = document.createElement('a');
-    link.href = resultUrl;
-    link.download = `${baseName}_converted.${extension}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setDownloadProgress(0);
+    const interval = setInterval(() => {
+      setDownloadProgress((prev) => {
+        if (prev === null || prev >= 90) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 30;
+      });
+    }, 150);
+
+    setTimeout(() => {
+      const filename = `${customFilename || 'converted'}.${extension}`;
+      const link = document.createElement('a');
+      link.href = resultUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => setDownloadProgress(null), 1000);
+    }, 500);
+  };
+
+  const handlePreview = () => {
+    if (!resultUrl) return;
+    window.open(resultUrl, '_blank');
   };
 
   const handleReset = () => {
@@ -102,6 +130,8 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
     setPreviewUrl(null);
     setResultUrl(null);
     setResultSize(0);
+    setCustomFilename('');
+    setDownloadProgress(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -194,26 +224,74 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
               <div className="space-y-2">
                 <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Converted ({toFormat})</span>
                 <div className="aspect-square rounded-xl bg-slate-100 border-2 border-emerald-500 flex items-center justify-center overflow-hidden p-2 relative">
-                  {isProcessing && (
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center text-xs font-bold text-emerald-600">
-                      {t('converting')}
+                  {(isProcessing || processingProgress > 0 && processingProgress < 100) && (
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center text-xs font-bold text-emerald-600 gap-2">
+                      <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin"></div>
+                      <span>Converting... {processingProgress}%</span>
                     </div>
                   )}
                   {resultUrl && <img src={resultUrl} alt="Converted" className="max-h-full max-w-full object-contain" />}
                 </div>
-                <div className="text-xs font-semibold text-emerald-700 text-right">{resultSize > 0 ? formatBytes(resultSize) : '...'}</div>
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <button
+                    onClick={handlePreview}
+                    disabled={!resultUrl}
+                    className="text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    🔍 View / Open Full Image
+                  </button>
+                  <span className="text-emerald-700">{resultSize > 0 ? formatBytes(resultSize) : '...'}</span>
+                </div>
               </div>
+            </div>
+
+            {/* Custom Output Filename */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Output File Name (Apne hisab se naam rakhein):
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={customFilename}
+                  onChange={(e) => setCustomFilename(e.target.value)}
+                  placeholder="Enter file name"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                />
+                <span className="text-sm font-bold text-slate-500">.{extension}</span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                📁 Files automatically download to your device's default <strong>Downloads</strong> folder.
+              </p>
+              {downloadProgress !== null && (
+                <div className="space-y-1 pt-2">
+                  <div className="flex justify-between text-xs font-bold text-emerald-700">
+                    <span>Downloading to Downloads folder...</span>
+                    <span>{downloadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div className="bg-emerald-600 h-full transition-all duration-150" style={{ width: `${downloadProgress}%` }}></div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
               <button
                 onClick={handleDownload}
-                disabled={isProcessing || !resultUrl}
+                disabled={isProcessing || !resultUrl || downloadProgress !== null}
                 className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Download {toFormat} ({resultSize > 0 ? formatBytes(resultSize) : ''})
+              </button>
+              <button
+                onClick={handlePreview}
+                disabled={!resultUrl}
+                className="py-3.5 px-5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer border border-emerald-200"
+              >
+                👁️ Open / View
               </button>
               <button
                 onClick={handleReset}
