@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, RefreshCw, RotateCw } from 'lucide-react';
 import { PDFDocument, degrees } from 'pdf-lib';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export const RotatePdfTool: React.FC = () => {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [rotationAngle, setRotationAngle] = useState<number>(90);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -70,13 +72,13 @@ export const RotatePdfTool: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       <div className="text-center space-y-3">
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wider">
-          PDF Rotator
+          {t('pdfTools')}
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Rotate PDF Pages
+          {t('rotatePdf')}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          Rotate all pages in your PDF document by 90, 180, or 270 degrees instantly.
+          {t('footerDesc')}
         </p>
       </div>
 
@@ -101,10 +103,10 @@ export const RotatePdfTool: React.FC = () => {
             <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
               <RotateCw className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">Upload PDF Document</h3>
-            <p className="text-xs text-slate-500 mb-4">Select PDF to rotate</p>
+            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('pdfRotator')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('selectPdfToRotate')}</p>
             <button className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              Browse PDF
+              {t('uploadPdf')}
             </button>
           </div>
         ) : (
@@ -118,7 +120,7 @@ export const RotatePdfTool: React.FC = () => {
                 onClick={handleReset}
                 className="py-1.5 px-3 rounded-lg bg-slate-200 text-slate-700 font-semibold text-xs cursor-pointer"
               >
-                Change PDF
+                {t('startOver')}
               </button>
             </div>
 
@@ -153,7 +155,7 @@ export const RotatePdfTool: React.FC = () => {
                   className="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <RotateCw className="w-4 h-4" />
-                  {isProcessing ? 'Rotating PDF...' : 'Rotate PDF Pages'}
+                  {isProcessing ? t('optimizing') : t('rotatePdf')}
                 </button>
               ) : (
                 <>
@@ -162,14 +164,14 @@ export const RotatePdfTool: React.FC = () => {
                     className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
-                    Download Rotated PDF ({formatBytes(resultSize)})
+                    {t('downloadPdf')} ({formatBytes(resultSize)})
                   </button>
                   <button
                     onClick={handleReset}
-                    className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Start Over
+                    {t('startOver')}
                   </button>
                 </>
               )}

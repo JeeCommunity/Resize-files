@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, RefreshCw, Scissors, FileText } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export const SplitPdfTool: React.FC = () => {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [pageCount, setPageCount] = useState<number>(0);
   const [splitRange, setSplitRange] = useState<string>('1-1');
@@ -97,13 +99,13 @@ export const SplitPdfTool: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       <div className="text-center space-y-3">
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wider">
-          PDF Splitter
+          {t('pdfTools')}
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Split PDF Pages
+          {t('splitPdf')}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          Extract specific pages or page ranges from your PDF document easily and securely.
+          {t('footerDesc')}
         </p>
       </div>
 
@@ -128,10 +130,10 @@ export const SplitPdfTool: React.FC = () => {
             <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
               <Scissors className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">Upload PDF Document</h3>
-            <p className="text-xs text-slate-500 mb-4">Select PDF to split</p>
+            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('uploadPdfDoc')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('selectPdfToSplit')}</p>
             <button className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              Browse PDF
+              {t('uploadPdf')}
             </button>
           </div>
         ) : (
@@ -139,18 +141,18 @@ export const SplitPdfTool: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between">
               <div>
                 <span className="font-bold text-slate-900 block text-sm">{file.name}</span>
-                <span className="text-xs text-slate-500">Total Pages: {pageCount}</span>
+                <span className="text-xs text-slate-500">{t('totalPages')}: {pageCount}</span>
               </div>
               <button
                 onClick={handleReset}
                 className="py-1.5 px-3 rounded-lg bg-slate-200 text-slate-700 font-semibold text-xs cursor-pointer"
               >
-                Change PDF
+                {t('startOver')}
               </button>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 text-xs mb-2">Page Range to Extract (e.g., 1-3 or 2-5)</label>
+              <label className="block font-bold text-slate-700 text-xs mb-2">Page Range to Extract (e.g., 1-3)</label>
               <input
                 type="text"
                 value={splitRange}
@@ -158,7 +160,6 @@ export const SplitPdfTool: React.FC = () => {
                 placeholder={`1-${pageCount}`}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">Specify start and end pages separated by a hyphen.</span>
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
@@ -169,7 +170,7 @@ export const SplitPdfTool: React.FC = () => {
                   className="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Scissors className="w-4 h-4" />
-                  {isProcessing ? 'Splitting PDF...' : 'Split & Extract Pages'}
+                  {isProcessing ? t('optimizing') : t('splitPdf')}
                 </button>
               ) : (
                 <>
@@ -178,14 +179,14 @@ export const SplitPdfTool: React.FC = () => {
                     className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
-                    Download Split PDF ({formatBytes(resultSize)})
+                    {t('downloadPdf')} ({formatBytes(resultSize)})
                   </button>
                   <button
                     onClick={handleReset}
                     className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Start Over
+                    {t('startOver')}
                   </button>
                 </>
               )}

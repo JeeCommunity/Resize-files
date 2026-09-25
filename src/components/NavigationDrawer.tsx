@@ -9,6 +9,7 @@ import {
   Shield,
   Search
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface NavigationDrawerProps {
   isOpen: boolean;
@@ -24,42 +25,43 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   onNavigate,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useLanguage();
 
   if (!isOpen) return null;
 
   const ALL_TOOLS = [
-    { route: '/', label: 'Image Resizer / Compressor', category: 'General' },
-    { route: '/image-resizer', label: 'Image Resizer', category: 'Resizers' },
-    { route: '/compress-image', label: 'Compress Image', category: 'Resizers' },
-    { route: '/photo-resizer', label: 'Photo Resizer', category: 'Resizers' },
-    { route: '/signature-resizer', label: 'Signature Resizer (20KB)', category: 'Resizers' },
-    { route: '/passport-photo-resizer', label: 'Passport Photo Resizer', category: 'Resizers' },
-    { route: '/jpg-to-png', label: 'JPG to PNG', category: 'Image Tools' },
-    { route: '/background-remover', label: 'Background Remover', category: 'Image Tools' },
-    { route: '/png-to-jpg', label: 'PNG to JPG', category: 'Image Tools' },
-    { route: '/jpg-to-webp', label: 'JPG to WebP', category: 'Image Tools' },
-    { route: '/png-to-webp', label: 'PNG to WebP', category: 'Image Tools' },
-    { route: '/webp-to-jpg', label: 'WebP to JPG', category: 'Image Tools' },
-    { route: '/webp-to-png', label: 'WebP to PNG', category: 'Image Tools' },
-    { route: '/compress-image-to-20kb', label: 'Compress to 20KB', category: 'Target Size' },
-    { route: '/compress-image-to-50kb', label: 'Compress to 50KB', category: 'Target Size' },
-    { route: '/compress-image-to-100kb', label: 'Compress to 100KB', category: 'Target Size' },
-    { route: '/compress-image-to-200kb', label: 'Compress to 200KB', category: 'Target Size' },
-    { route: '/compress-image-to-500kb', label: 'Compress to 500KB', category: 'Target Size' },
-    { route: '/image-to-pdf', label: 'Image to PDF', category: 'PDF Tools' },
-    { route: '/jpg-to-pdf', label: 'JPG to PDF', category: 'PDF Tools' },
-    { route: '/png-to-pdf', label: 'PNG to PDF', category: 'PDF Tools' },
-    { route: '/pdf-to-jpg', label: 'PDF to JPG', category: 'PDF Tools' },
-    { route: '/pdf-to-png', label: 'PDF to PNG', category: 'PDF Tools' },
-    { route: '/merge-pdf', label: 'Merge PDF', category: 'PDF Tools' },
-    { route: '/split-pdf', label: 'Split PDF', category: 'PDF Tools' },
-    { route: '/rotate-pdf', label: 'Rotate PDF', category: 'PDF Tools' },
-    { route: '/compress-pdf', label: 'Compress PDF', category: 'PDF Tools' },
+    { route: '/', label: t('imageResizerCompressor'), category: t('catGeneral') },
+    { route: '/image-resizer', label: t('imageResizer'), category: t('catResizers') },
+    { route: '/compress-image', label: t('compressImage'), category: t('catResizers') },
+    { route: '/photo-resizer', label: t('photoResizer'), category: t('catResizers') },
+    { route: '/signature-resizer', label: t('signatureResizer'), category: t('catResizers') },
+    { route: '/passport-photo-resizer', label: t('passportPhotoResizer'), category: t('catResizers') },
+    { route: '/jpg-to-png', label: t('jpgToPng'), category: t('catImageTools') },
+    { route: '/background-remover', label: t('backgroundRemover'), category: t('catImageTools') },
+    { route: '/png-to-jpg', label: t('pngToJpg'), category: t('catImageTools') },
+    { route: '/jpg-to-webp', label: t('jpgToWebp'), category: t('catImageTools') },
+    { route: '/png-to-webp', label: t('pngToWebp'), category: t('catImageTools') },
+    { route: '/webp-to-jpg', label: t('webpToJpg'), category: t('catImageTools') },
+    { route: '/webp-to-png', label: t('webpToPng'), category: t('catImageTools') },
+    { route: '/compress-image-to-20kb', label: t('compressTo20kb'), category: t('catTargetSize') },
+    { route: '/compress-image-to-50kb', label: t('compressTo50kb'), category: t('catTargetSize') },
+    { route: '/compress-image-to-100kb', label: t('compressTo100kb'), category: t('catTargetSize') },
+    { route: '/compress-image-to-200kb', label: t('compressTo200kb'), category: t('catTargetSize') },
+    { route: '/compress-image-to-500kb', label: t('compressTo500kb'), category: t('catTargetSize') },
+    { route: '/image-to-pdf', label: t('imageToPdf'), category: t('catPdfTools') },
+    { route: '/jpg-to-pdf', label: t('jpgToPdf'), category: t('catPdfTools') },
+    { route: '/png-to-pdf', label: t('pngToPdf'), category: t('catPdfTools') },
+    { route: '/pdf-to-jpg', label: t('pdfToJpg'), category: t('catPdfTools') },
+    { route: '/pdf-to-png', label: t('pdfToPng'), category: t('catPdfTools') },
+    { route: '/merge-pdf', label: t('mergePdf'), category: t('catPdfTools') },
+    { route: '/split-pdf', label: t('splitPdf'), category: t('catPdfTools') },
+    { route: '/rotate-pdf', label: t('rotatePdf'), category: t('catPdfTools') },
+    { route: '/compress-pdf', label: t('compressPdf'), category: t('catPdfTools') },
   ];
 
   const filteredTools = searchQuery.trim() === '' 
     ? [] 
-    : ALL_TOOLS.filter(t => t.label.toLowerCase().includes(searchQuery.toLowerCase()) || t.category.toLowerCase().includes(searchQuery.toLowerCase()));
+    : ALL_TOOLS.filter(item => item.label.toLowerCase().includes(searchQuery.toLowerCase()) || item.category.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -78,8 +80,8 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-extrabold text-slate-900 block text-sm">Resize files</span>
-              <span className="text-[10px] text-slate-500">Image & PDF Tools</span>
+              <span className="font-extrabold text-slate-900 block text-sm">{t('appTitle')}</span>
+              <span className="text-[10px] text-slate-500">{t('imageTools')} & {t('pdfTools')}</span>
             </div>
           </div>
           <button 
@@ -96,12 +98,12 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           {/* SEARCH TOOL INPUT */}
           <div className="space-y-1.5">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center justify-between">
-              <span>Search Tools</span>
+              <span>{t('searchTools')}</span>
               <button
                 onClick={() => { onNavigate('/admin'); onClose(); }}
                 className="text-emerald-600 hover:text-emerald-700 font-bold text-[11px] flex items-center gap-1 cursor-pointer bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200"
               >
-                <Shield className="w-3 h-3" /> Admin Login
+                <Shield className="w-3 h-3" /> {t('adminLogin')}
               </button>
             </div>
             <div className="relative">
@@ -110,7 +112,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tools (e.g. 50kb, pdf, jpg)..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-xs font-medium"
               />
               {searchQuery && (
@@ -128,12 +130,12 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           {searchQuery.trim() !== '' ? (
             <div className="space-y-2">
               <div className="text-xs font-bold text-slate-400 uppercase px-1">
-                Results ({filteredTools.length})
+                {t('results')} ({filteredTools.length})
               </div>
               {filteredTools.length === 0 ? (
                 <div className="p-6 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-700">No tools found</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Try searching keywords like "20kb", "pdf", "jpg", or "resize"</p>
+                  <p className="text-xs font-semibold text-slate-700">{t('noToolsFound')}</p>
+                  <p className="text-[11px] text-slate-400 mt-1">{t('trySearchingKeywords')}</p>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -170,31 +172,31 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   }`}
                 >
                   <Home className="w-4 h-4 text-emerald-600" />
-                  <span>Image Resizer / Compressor</span>
+                  <span>{t('imageResizerCompressor')}</span>
                 </button>
               </div>
 
               {/* MORE TOOLS SECTION */}
               <div className="space-y-4">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-                  More Tools
+                  {t('moreTools')}
                 </div>
 
                 {/* IMAGE TOOLS CATEGORY */}
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2 px-3 py-1 text-xs font-bold text-slate-800">
                     <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Image Tools</span>
+                    <span>{t('imageTools')}</span>
                   </div>
                   <div className="pl-4 space-y-0.5 border-l-2 border-slate-100 ml-3">
                     {[
-                      { route: '/background-remover', label: 'Background Remover' },
-                      { route: '/jpg-to-png', label: 'JPG to PNG' },
-                      { route: '/png-to-jpg', label: 'PNG to JPG' },
-                      { route: '/jpg-to-webp', label: 'JPG to WebP' },
-                      { route: '/png-to-webp', label: 'PNG to WebP' },
-                      { route: '/webp-to-jpg', label: 'WebP to JPG' },
-                      { route: '/webp-to-png', label: 'WebP to PNG' },
+                      { route: '/background-remover', label: t('backgroundRemover') },
+                      { route: '/jpg-to-png', label: t('jpgToPng') },
+                      { route: '/png-to-jpg', label: t('pngToJpg') },
+                      { route: '/jpg-to-webp', label: t('jpgToWebp') },
+                      { route: '/png-to-webp', label: t('pngToWebp') },
+                      { route: '/webp-to-jpg', label: t('webpToJpg') },
+                      { route: '/webp-to-png', label: t('webpToPng') },
                     ].map((item) => (
                       <button
                         key={item.route}
@@ -212,14 +214,14 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   </div>
 
                   <div className="pt-2">
-                    <div className="text-[11px] font-bold text-slate-500 uppercase px-3 py-1">Popular Resizers</div>
+                    <div className="text-[11px] font-bold text-slate-500 uppercase px-3 py-1">{t('popularResizers')}</div>
                     <div className="pl-4 space-y-0.5 border-l-2 border-emerald-100 ml-3">
                       {[
-                        { route: '/image-resizer', label: 'Image Resizer' },
-                        { route: '/compress-image', label: 'Compress Image' },
-                        { route: '/photo-resizer', label: 'Photo Resizer' },
-                        { route: '/signature-resizer', label: 'Signature Resizer' },
-                        { route: '/passport-photo-resizer', label: 'Passport Photo Resizer' },
+                        { route: '/image-resizer', label: t('imageResizer') },
+                        { route: '/compress-image', label: t('compressImage') },
+                        { route: '/photo-resizer', label: t('photoResizer') },
+                        { route: '/signature-resizer', label: t('signatureResizer') },
+                        { route: '/passport-photo-resizer', label: t('passportPhotoResizer') },
                       ].map((item) => (
                         <button
                           key={item.route}
@@ -238,14 +240,14 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   </div>
 
                   <div className="pt-2">
-                    <div className="text-[11px] font-bold text-slate-500 uppercase px-3 py-1">Target Size Compressors</div>
+                    <div className="text-[11px] font-bold text-slate-500 uppercase px-3 py-1">{t('targetSizeCompressors')}</div>
                     <div className="pl-4 space-y-0.5 border-l-2 border-emerald-100 ml-3">
                       {[
-                        { route: '/compress-image-to-20kb', label: 'Compress to 20KB' },
-                        { route: '/compress-image-to-50kb', label: 'Compress to 50KB' },
-                        { route: '/compress-image-to-100kb', label: 'Compress to 100KB' },
-                        { route: '/compress-image-to-200kb', label: 'Compress to 200KB' },
-                        { route: '/compress-image-to-500kb', label: 'Compress to 500KB' },
+                        { route: '/compress-image-to-20kb', label: t('compressTo20kb') },
+                        { route: '/compress-image-to-50kb', label: t('compressTo50kb') },
+                        { route: '/compress-image-to-100kb', label: t('compressTo100kb') },
+                        { route: '/compress-image-to-200kb', label: t('compressTo200kb') },
+                        { route: '/compress-image-to-500kb', label: t('compressTo500kb') },
                       ].map((item) => (
                         <button
                           key={item.route}
@@ -268,19 +270,19 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                 <div className="space-y-1 pt-2">
                   <div className="flex items-center space-x-2 px-3 py-1 text-xs font-bold text-slate-800">
                     <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>PDF Tools</span>
+                    <span>{t('pdfTools')}</span>
                   </div>
                   <div className="pl-4 space-y-0.5 border-l-2 border-slate-100 ml-3">
                     {[
-                      { route: '/image-to-pdf', label: 'Image to PDF' },
-                      { route: '/jpg-to-pdf', label: 'JPG to PDF' },
-                      { route: '/png-to-pdf', label: 'PNG to PDF' },
-                      { route: '/pdf-to-jpg', label: 'PDF to JPG' },
-                      { route: '/pdf-to-png', label: 'PDF to PNG' },
-                      { route: '/merge-pdf', label: 'Merge PDF' },
-                      { route: '/split-pdf', label: 'Split PDF' },
-                      { route: '/rotate-pdf', label: 'Rotate PDF' },
-                      { route: '/compress-pdf', label: 'Compress PDF' },
+                      { route: '/image-to-pdf', label: t('imageToPdf') },
+                      { route: '/jpg-to-pdf', label: t('jpgToPdf') },
+                      { route: '/png-to-pdf', label: t('pngToPdf') },
+                      { route: '/pdf-to-jpg', label: t('pdfToJpg') },
+                      { route: '/pdf-to-png', label: t('pdfToPng') },
+                      { route: '/merge-pdf', label: t('mergePdf') },
+                      { route: '/split-pdf', label: t('splitPdf') },
+                      { route: '/rotate-pdf', label: t('rotatePdf') },
+                      { route: '/compress-pdf', label: t('compressPdf') },
                     ].map((item) => (
                       <button
                         key={item.route}
@@ -306,7 +308,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-500">
             <div className="flex items-center space-x-2 px-3 py-1">
               <Shield className="w-3.5 h-3.5 text-emerald-600" />
-              <span>100% Client-Side Privacy</span>
+              <span>{t('clientSidePrivacy')}</span>
             </div>
           </div>
 

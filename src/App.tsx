@@ -837,20 +837,34 @@ export default function App() {
 
   const handleDownloadPDF = () => {
     if (!result || !originalFile) return;
-    const url = URL.createObjectURL(result.blob);
-    const img = new Image();
-    img.onload = () => {
-      const pdf = new jsPDF({
-        orientation: img.width > img.height ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [img.width, img.height]
-      });
-      pdf.addImage(url, 'JPEG', 0, 0, img.width, img.height);
-      const baseName = originalFile.name.substring(0, originalFile.name.lastIndexOf('.')) || 'document';
-      pdf.save(`${baseName}_under_${effectiveTargetKB}kb.pdf`);
-      URL.revokeObjectURL(url);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const pdf = new jsPDF({
+            orientation: img.width > img.height ? 'landscape' : 'portrait',
+            unit: 'px',
+            format: [img.width, img.height]
+          });
+          pdf.addImage(dataUrl, 'JPEG', 0, 0, img.width, img.height);
+          const baseName = originalFile.name.substring(0, originalFile.name.lastIndexOf('.')) || 'document';
+          pdf.save(`${baseName}_under_${effectiveTargetKB}kb.pdf`);
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          setErrorMsg('Error generating PDF. Please try again.');
+        }
+      };
+      img.onerror = () => {
+        setErrorMsg('Error reading image for PDF generation.');
+      };
+      img.src = dataUrl;
     };
-    img.src = url;
+    reader.onerror = () => {
+      setErrorMsg('Error reading file blob.');
+    };
+    reader.readAsDataURL(result.blob);
   };
 
   const handleCopy = async () => {
@@ -999,19 +1013,19 @@ export default function App() {
           <ImageConverterTool route="/webp-to-png" title="Convert WebP to PNG Online" description="Convert WebP images to lossless PNG format." fromFormat="WebP" toFormat="PNG" mimeType="image/png" extension="png" />
         )}
         {currentRoute === '/image-to-pdf' && (
-          <ImageToPdfTool title="Convert Images to PDF" description="Combine any images into a single professional PDF document." />
+          <ImageToPdfTool titleKey="convertImagesToPdfTitle" descKey="convertImagesToPdfDesc" />
         )}
         {currentRoute === '/jpg-to-pdf' && (
-          <ImageToPdfTool title="Convert JPG to PDF Online" description="Combine JPG images into a single PDF document." allowedExts="image/jpeg,image/jpg" />
+          <ImageToPdfTool titleKey="jpgToPdfTitle" descKey="jpgToPdfDesc" allowedExts="image/jpeg,image/jpg" />
         )}
         {currentRoute === '/png-to-pdf' && (
-          <ImageToPdfTool title="Convert PNG to PDF Online" description="Combine PNG images into a single PDF document." allowedExts="image/png" />
+          <ImageToPdfTool titleKey="pngToPdfTitle" descKey="pngToPdfDesc" allowedExts="image/png" />
         )}
         {currentRoute === '/pdf-to-jpg' && (
-          <PdfToImageTool title="Convert PDF to JPG Online" description="Extract all pages of a PDF into high-quality JPG images." outputFormat="image/jpeg" extension="jpg" />
+          <PdfToImageTool titleKey="pdfToJpgTitle" descKey="pdfToJpgDesc" outputFormat="image/jpeg" extension="jpg" />
         )}
         {currentRoute === '/pdf-to-png' && (
-          <PdfToImageTool title="Convert PDF to PNG Online" description="Extract all pages of a PDF into high-quality PNG images." outputFormat="image/png" extension="png" />
+          <PdfToImageTool titleKey="pdfToPngTitle" descKey="pdfToPngDesc" outputFormat="image/png" extension="png" />
         )}
         {currentRoute === '/merge-pdf' && <MergePdfTool />}
         {currentRoute === '/split-pdf' && <SplitPdfTool />}
@@ -1144,7 +1158,7 @@ export default function App() {
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-slate-900 truncate">{originalFile.name}</div>
                   <div className="text-xs text-slate-500">
-                    Original size: <span className="font-semibold text-slate-700">{formatBytes(originalSize)}</span> • {originalDimensions.width} × {originalDimensions.height} px
+                    {getTranslation(selectedLang, 'originalSizeText')} <span className="font-semibold text-slate-700">{formatBytes(originalSize)}</span> • {originalDimensions.width} × {originalDimensions.height} px
                   </div>
                 </div>
               </div>
@@ -1154,14 +1168,14 @@ export default function App() {
                     onClick={handleResetEdits}
                     className="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
                   >
-                    Reset edits
+                    {getTranslation(selectedLang, 'resetEdits')}
                   </button>
                 )}
                 <button
                   onClick={handleReset}
                   className="text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Choose New
+                  <RefreshCw className="w-3.5 h-3.5" /> {getTranslation(selectedLang, 'chooseNew')}
                 </button>
               </div>
             </div>
@@ -1172,7 +1186,7 @@ export default function App() {
               {/* Upload Photo (Original) Card */}
               <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Original Photo</span>
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">{getTranslation(selectedLang, 'originalPhoto')}</span>
                   <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800">
                     {formatBytes(originalSize)}
                   </span>
@@ -1194,7 +1208,7 @@ export default function App() {
                   {/* Overlay on hover/touch */}
                   <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2 text-center">
                     <span className="px-2.5 py-1.5 rounded-lg bg-white/95 text-slate-900 text-xs font-bold shadow-md flex items-center gap-1.5">
-                      <Crop className="w-3.5 h-3.5 text-emerald-600" /> Tap to Edit / Crop
+                      <Crop className="w-3.5 h-3.5 text-emerald-600" /> {getTranslation(selectedLang, 'tapToEditCrop')}
                     </span>
                   </div>
                 </div>
@@ -1206,7 +1220,7 @@ export default function App() {
                     className="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                   >
                     <Crop className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Edit / Crop Photo</span>
+                    <span>{getTranslation(selectedLang, 'editCropPhoto')}</span>
                   </button>
 
                   {/* Inline quick rotate & flip controls */}
@@ -1256,11 +1270,11 @@ export default function App() {
               {/* Result Photo Card */}
               <div className="bg-white rounded-2xl p-3.5 sm:p-5 border-2 border-emerald-500/70 shadow-md flex flex-col justify-between relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 sm:py-1 rounded-bl-xl uppercase tracking-wider">
-                  Compressed
+                  {getTranslation(selectedLang, 'compressed')}
                 </div>
 
                 <div className="flex items-center justify-between mb-2 pr-16 sm:pr-20">
-                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700">Result Photo</span>
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700">{getTranslation(selectedLang, 'resultPhoto')}</span>
                 </div>
 
                 {/* Compressed Preview */}
@@ -1268,7 +1282,7 @@ export default function App() {
                   {isCompressing ? (
                     <div className="flex flex-col items-center justify-center text-emerald-600 space-y-1.5">
                       <RefreshCw className="w-7 h-7 animate-spin" />
-                      <span className="text-[11px] font-semibold">Optimizing...</span>
+                      <span className="text-[11px] font-semibold">{getTranslation(selectedLang, 'optimizing')}</span>
                     </div>
                   ) : result ? (
                     <img
@@ -1287,14 +1301,14 @@ export default function App() {
                     </span>
                     <span className="text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-200/60 text-emerald-800">
                       {sizeMode === 'target'
-                        ? (Math.abs(diffKB) <= 2 ? '✓ Target Met' : `${diffKB >= 0 ? '+' : ''}${diffKB.toFixed(1)} KB`)
-                        : `${sizeDiffPercent.toFixed(1)}% smaller`}
+                        ? (Math.abs(diffKB) <= 2 ? getTranslation(selectedLang, 'targetMet') : `${diffKB >= 0 ? '+' : ''}${diffKB.toFixed(1)} KB`)
+                        : `${sizeDiffPercent.toFixed(1)}% ${getTranslation(selectedLang, 'sizeSmaller')}`}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] sm:text-xs text-slate-500 pt-0.5">
                     <span>{result ? `${result.width} × ${result.height} px` : '-'}</span>
-                    <span className="font-semibold text-slate-700">{result ? `${Math.round(result.qualityUsed * 100)}% quality` : '-'}</span>
+                    <span className="font-semibold text-slate-700">{result ? `${Math.round(result.qualityUsed * 100)}% ${getTranslation(selectedLang, 'qualityLabel')}` : '-'}</span>
                   </div>
 
                   <div className="pt-1">
@@ -1304,7 +1318,7 @@ export default function App() {
                       className="w-full py-1.5 sm:py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Download ({result ? formatBytes(result.sizeBytes) : '...'})</span>
+                      <span>{getTranslation(selectedLang, 'download')} ({result ? formatBytes(result.sizeBytes) : '...'})</span>
                     </button>
                   </div>
                 </div>
@@ -1319,12 +1333,12 @@ export default function App() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1 border-b border-slate-100">
                 <div>
                   <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                    <span>Target file size</span>
+                    <span>{getTranslation(selectedLang, 'targetFileSize')}</span>
                     <span className="text-emerald-600 font-black text-lg">
                       {targetSizeInput ? `${targetSizeInput} KB` : '---'}
                     </span>
                   </h2>
-                  <p className="text-xs text-slate-500">Choose quick size or type any custom KB</p>
+                  <p className="text-xs text-slate-500">{getTranslation(selectedLang, 'chooseQuickSize')}</p>
                 </div>
 
                 {/* Compact Size Mode Toggle */}
@@ -1337,7 +1351,7 @@ export default function App() {
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    ≤ Under target
+                    {getTranslation(selectedLang, 'underTarget')}
                   </button>
                   <button
                     onClick={() => setSizeMode('target')}
@@ -1347,14 +1361,14 @@ export default function App() {
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    Exact target KB
+                    {getTranslation(selectedLang, 'exactTarget')}
                   </button>
                 </div>
               </div>
 
               {/* Quick Sizes: 1-Tap Buttons */}
               <div>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">Quick sizes</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">{getTranslation(selectedLang, 'quickSizes')}</span>
                 <div className="flex flex-wrap gap-2">
                   {[20, 50, 100, 200, 500].map((size) => (
                     <button
@@ -1374,7 +1388,7 @@ export default function App() {
 
               {/* Custom Target Size Input */}
               <div>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Custom target size</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">{getTranslation(selectedLang, 'customTargetSize')}</span>
                 <div className="relative">
                   <input
                     type="number"
@@ -1383,7 +1397,7 @@ export default function App() {
                     inputMode="decimal"
                     value={targetSizeInput}
                     onChange={(e) => setTargetSizeInput(e.target.value)}
-                    placeholder="Enter target size (e.g. 50)"
+                    placeholder={getTranslation(selectedLang, 'enterTargetSize')}
                     className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-base font-semibold"
                   />
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-xs font-bold text-slate-400">
@@ -1412,13 +1426,13 @@ export default function App() {
                     )}
                     <span className="truncate">
                       {sizeMode === 'under'
-                        ? `Guaranteed under target: ${formatBytes(result.sizeBytes)} (≤ ${effectiveTargetKB} KB)`
+                        ? `${getTranslation(selectedLang, 'guaranteedUnderTarget')} ${formatBytes(result.sizeBytes)} (≤ ${effectiveTargetKB} KB)`
                         : `Target: ${effectiveTargetKB} KB | Output: ${formatBytes(result.sizeBytes)}`}
                     </span>
                   </div>
                   <span className="font-extrabold text-emerald-800 shrink-0 ml-2">
                     {sizeMode === 'under'
-                      ? `${sizeDiffPercent.toFixed(0)}% smaller`
+                      ? `${sizeDiffPercent.toFixed(0)}% ${getTranslation(selectedLang, 'sizeSmaller')}`
                       : `${diffKB >= 0 ? '+' : ''}${diffKB.toFixed(1)} KB`}
                   </span>
                 </div>
@@ -1431,7 +1445,7 @@ export default function App() {
                 className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-extrabold text-base shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
               >
                 <Download className="w-5 h-5" />
-                <span>{outputFormat === 'application/pdf' ? 'Download Compressed PDF' : 'Download Result Photo'}</span>
+                <span>{outputFormat === 'application/pdf' ? 'Download Compressed PDF' : getTranslation(selectedLang, 'downloadResultPhoto')}</span>
                 <span className="px-2.5 py-0.5 rounded-lg bg-emerald-800/40 text-emerald-100 text-xs font-bold">
                   {result ? formatBytes(result.sizeBytes) : '...'}
                 </span>
@@ -1445,7 +1459,7 @@ export default function App() {
                   className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:bg-slate-100 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  <span>{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
+                  <span>{copied ? 'Copied!' : getTranslation(selectedLang, 'copyToClipboard')}</span>
                 </button>
 
                 <button
@@ -1453,7 +1467,7 @@ export default function App() {
                   className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Crop className="w-4 h-4 text-emerald-600" />
-                  <span>Crop / Edit Again</span>
+                  <span>{getTranslation(selectedLang, 'cropEditAgain')}</span>
                 </button>
               </div>
 
@@ -1462,12 +1476,12 @@ export default function App() {
             {/* 3. MORE OPTIONS & FORMAT (Secondary Settings) */}
             <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-xs space-y-5">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                More Options & Format (Optional)
+                {getTranslation(selectedLang, 'moreOptionsFormat')}
               </h3>
 
               {/* Output Format */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Output Format</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">{getTranslation(selectedLang, 'outputFormat')}</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { id: 'image/jpeg', label: 'JPG' },
@@ -1493,13 +1507,13 @@ export default function App() {
               {/* Compression Priority */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-                  <Settings2 className="w-4 h-4 text-emerald-600" /> Compression Priority
+                  <Settings2 className="w-4 h-4 text-emerald-600" /> {getTranslation(selectedLang, 'compressionPriority')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'quality', label: 'Quality priority', desc: 'Best clarity' },
-                    { id: 'balanced', label: 'Balanced', desc: 'Standard' },
-                    { id: 'smallest', label: 'Smallest file', desc: 'Max compression' },
+                    { id: 'quality', label: getTranslation(selectedLang, 'qualityPriority') },
+                    { id: 'balanced', label: getTranslation(selectedLang, 'balanced') },
+                    { id: 'smallest', label: getTranslation(selectedLang, 'smallestFile') },
                   ].map((mode) => (
                     <button
                       key={mode.id}
@@ -1518,13 +1532,13 @@ export default function App() {
 
               {/* Max Width Limit */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Max Width (Optional)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">{getTranslation(selectedLang, 'maxWidth')}</label>
                 <select
                   value={maxWidth}
                   onChange={(e) => setMaxWidth(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm font-medium bg-white cursor-pointer"
                 >
-                  <option value="none">Original Dimensions ({originalDimensions.width}px)</option>
+                  <option value="none">{getTranslation(selectedLang, 'originalDimensions')} ({originalDimensions.width}px)</option>
                   <option value="200">200 px (Banking Signature)</option>
                   <option value="350">350 px (UPSC Photo/Sig)</option>
                   <option value="400">400 px (Standard Passport)</option>
@@ -1540,9 +1554,9 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <FileCheck className="w-4 h-4 text-emerald-600" />
-                  Common Exam & Form Requirements
+                  {getTranslation(selectedLang, 'examPresetsHeader')}
                 </h3>
-                <span className="text-xs text-slate-400">Click preset to apply</span>
+                <span className="text-xs text-slate-400">{getTranslation(selectedLang, 'clickPreset')}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

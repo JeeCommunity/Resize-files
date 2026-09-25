@@ -1,23 +1,32 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Download, RefreshCw, FileText, ArrowRight, Trash2, ShieldCheck } from 'lucide-react';
+import { Upload, Download, RefreshCw, FileText, Trash2, Loader2 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface ImageToPdfToolProps {
-  title: string;
-  description: string;
+  titleKey?: string;
+  descKey?: string;
+  title?: string;
+  description?: string;
   allowedExts?: string;
 }
 
 export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
+  titleKey,
+  descKey,
   title,
   description,
-  allowedExts = "image/jpeg,image/png,image/webp"
+  allowedExts = "image/jpeg,image/png,image/webp,image/bmp"
 }) => {
+  const { t } = useLanguage();
+  const displayTitle = titleKey ? t(titleKey) : (title || t('convertImagesToPdfTitle'));
+  const displayDesc = descKey ? t(descKey) : (description || t('convertImagesToPdfDesc'));
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState<'a4' | 'letter' | 'fit'>('a4');
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [progressText, setProgressText] = useState<string>('');
   const [pdfResultUrl, setPdfResultUrl] = useState<string | null>(null);
   const [pdfSize, setPdfSize] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,19 +49,94 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
     setPdfResultUrl(null);
   };
 
+  // Robust image loader & normalizer via canvas (handles WebP, PNG, JPEG, BMP & prevents OOM on 40+ high-res images)
+  const processImageToBuffer = async (file: File): Promise<{ arrayBuf: ArrayBuffer; isPng: boolean }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Limit max dimension to 2000px to ensure smooth batch processing of 40+ images without memory issues
+          const MAX_DIMENSION = 2000;
+          if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+            if (width > height) {
+              height = Math.round((height * MAX_DIMENSION) / width);
+              width = MAX_DIMENSION;
+            } else {
+              width = Math.round((width * MAX_DIMENSION) / height);
+              height = MAX_DIMENSION;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not initialize canvas context'));
+            return;
+          }
+
+          // Fill white background for transparent images when converted to JPEG
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const isPng = file.type === 'image/png';
+          const mimeType = isPng ? 'image/png' : 'image/jpeg';
+          const quality = isPng ? undefined : 0.90;
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Failed to encode image blob'));
+                return;
+              }
+              blob.arrayBuffer().then((buf) => {
+                resolve({ arrayBuf: buf, isPng });
+              }).catch(reject);
+            },
+            mimeType,
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error(`Failed to decode image: ${file.name}`));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleGeneratePdf = async () => {
     if (files.length === 0) return;
     setIsProcessing(true);
+    setProgressText(t('initializingPdf'));
 
     try {
       const pdfDoc = await PDFDocument.create();
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const arrayBuf = await file.arrayBuffer();
+        setProgressText(`${t('processingImageOf')} ${i + 1} of ${files.length}...`);
+
+        let arrayBuf: ArrayBuffer;
+        let isPng: boolean;
+
+        try {
+          const processed = await processImageToBuffer(file);
+          arrayBuf = processed.arrayBuf;
+          isPng = processed.isPng;
+        } catch (imgErr) {
+          console.warn(`Skipping corrupted or unsupported image #${i + 1} (${file.name}):`, imgErr);
+          continue; // Skip faulty image rather than aborting entire batch
+        }
         
         let embeddedImage;
-        if (file.type === 'image/png') {
+        if (isPng) {
           embeddedImage = await pdfDoc.embedPng(arrayBuf);
         } else {
           embeddedImage = await pdfDoc.embedJpg(arrayBuf);
@@ -108,15 +192,17 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
         }
       }
 
+      setProgressText(t('finalizingPdfDocument'));
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
       setPdfResultUrl(URL.createObjectURL(blob));
       setPdfSize(blob.size);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error generating PDF:', err);
-      alert('Failed to generate PDF. Please ensure valid image formats are used.');
+      alert(`Failed to generate PDF: ${err?.message || 'Please check uploaded image files.'}`);
     } finally {
       setIsProcessing(false);
+      setProgressText('');
     }
   };
 
@@ -149,13 +235,13 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       <div className="text-center space-y-3">
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wider">
-          PDF Creator
+          {t('pdfCreator')}
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          {title}
+          {displayTitle}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          {description} Combine multiple images into a single professional PDF document securely in your browser.
+          {displayDesc}
         </p>
       </div>
 
@@ -181,10 +267,10 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
             <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
               <Upload className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">Upload Images</h3>
-            <p className="text-xs text-slate-500 mb-4">Select one or multiple JPG/PNG images</p>
+            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('uploadImages')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('selectImagesPrompt')}</p>
             <button className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              Browse Images
+              {t('uploadImage')}
             </button>
           </div>
         ) : (
@@ -192,28 +278,28 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
             {/* Options */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Page Size</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('pageSize')}</label>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(e.target.value as any)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-medium"
                 >
-                  <option value="a4">A4 Standard</option>
-                  <option value="letter">US Letter</option>
-                  <option value="fit">Fit to Image Size</option>
+                  <option value="a4">{t('a4Standard')}</option>
+                  <option value="letter">{t('usLetter')}</option>
+                  <option value="fit">{t('fitToImage')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Orientation</label>
+                <label className="block font-bold text-slate-700 mb-1">{t('orientation')}</label>
                 <select
                   value={orientation}
                   onChange={(e) => setOrientation(e.target.value as any)}
                   disabled={pageSize === 'fit'}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-medium disabled:opacity-50"
                 >
-                  <option value="portrait">Portrait</option>
-                  <option value="landscape">Landscape</option>
+                  <option value="portrait">{t('portrait')}</option>
+                  <option value="landscape">{t('landscape')}</option>
                 </select>
               </div>
             </div>
@@ -221,12 +307,12 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
             {/* Thumbnail Grid */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Selected Images ({files.length})</span>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('selectedImages')} ({files.length})</span>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer"
                 >
-                  + Add More Images
+                  {t('addMoreImages')}
                 </button>
                 <input
                   type="file"
@@ -264,8 +350,17 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
                   disabled={isProcessing}
                   className="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <FileText className="w-4 h-4" />
-                  {isProcessing ? 'Generating PDF...' : `Generate PDF from ${files.length} Images`}
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {progressText || t('generatingPdf')}
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      {`${t('generatePdfFromImages')} (${files.length})`}
+                    </>
+                  )}
                 </button>
               ) : (
                 <>
@@ -274,14 +369,14 @@ export const ImageToPdfTool: React.FC<ImageToPdfToolProps> = ({
                     className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
-                    Download PDF ({formatBytes(pdfSize)})
+                    {t('downloadPdf')} ({formatBytes(pdfSize)})
                   </button>
                   <button
                     onClick={handleReset}
                     className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Start Over
+                    {t('startOver')}
                   </button>
                 </>
               )}

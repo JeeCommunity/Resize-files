@@ -1,23 +1,31 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, RefreshCw, FileText, ArrowRight, Trash2, Check } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 // Set worker source for pdfjs
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PdfToImageToolProps {
-  title: string;
-  description: string;
+  titleKey?: string;
+  descKey?: string;
+  title?: string;
+  description?: string;
   outputFormat: 'image/jpeg' | 'image/png';
   extension: string;
 }
 
 export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
+  titleKey,
+  descKey,
   title,
   description,
   outputFormat,
   extension,
 }) => {
+  const { t } = useLanguage();
+  const displayTitle = titleKey ? t(titleKey) : (title || t('pdfToJpgTitle'));
+  const displayDesc = descKey ? t(descKey) : (description || t('pdfToJpgDesc'));
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<{ pageNumber: number; url: string; blob: Blob; size: number }[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -27,7 +35,7 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
   const handleFileSelected = async (selectedFile: File) => {
     setFile(selectedFile);
     setIsProcessing(true);
-    setProgressText('Loading PDF...');
+    setProgressText(t('initializingPdf'));
     setPages([]);
 
     try {
@@ -39,7 +47,7 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
       const renderedPages = [];
 
       for (let i = 1; i <= numPages; i++) {
-        setProgressText(`Rendering page ${i} of ${numPages}...`);
+        setProgressText(`${t('renderingPageOf')} ${i} of ${numPages}...`);
         const page = await pdfDoc.getPage(i);
         const viewport = page.getViewport({ scale: 1.5 }); // High quality render scale
 
@@ -117,13 +125,13 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       <div className="text-center space-y-3">
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wider">
-          PDF to Image Converter
+          {t('pdfToImageConverter')}
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          {title}
+          {displayTitle}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          {description} Extract every page of your PDF into high-resolution {extension.toUpperCase()} images instantly in your browser.
+          {displayDesc}
         </p>
       </div>
 
@@ -148,10 +156,10 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
             <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
               <Upload className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">Upload PDF Document</h3>
-            <p className="text-xs text-slate-500 mb-4">Select a PDF file to extract pages</p>
+            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('uploadPdfDoc')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('selectPdfFileToExtractPages')}</p>
             <button className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              Browse PDF
+              {t('uploadPdf')}
             </button>
           </div>
         ) : (
@@ -166,7 +174,7 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <div>
                     <span className="font-bold text-slate-900 block text-sm">{file.name}</span>
-                    <span className="text-xs text-slate-500">{pages.length} Pages Extracted</span>
+                    <span className="text-xs text-slate-500">{pages.length} {t('pagesExtracted')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -174,13 +182,13 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
                       className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      Download All
+                      {t('downloadAll')}
                     </button>
                     <button
                       onClick={handleReset}
                       className="py-2 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
                     >
-                      Reset
+                      {t('reset')}
                     </button>
                   </div>
                 </div>
@@ -201,7 +209,7 @@ export const PdfToImageTool: React.FC<PdfToImageToolProps> = ({
                         className="w-full py-2 px-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        Download Page {pageObj.pageNumber}
+                        {t('downloadPage')} {pageObj.pageNumber}
                       </button>
                     </div>
                   ))}

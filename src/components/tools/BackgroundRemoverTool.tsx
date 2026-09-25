@@ -17,10 +17,7 @@ interface BackgroundRemoverToolProps {
   description?: string;
 }
 
-export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
-  title = "Background Remover – Remove Image Background Online",
-  description = "Remove backgrounds from images instantly in your browser with zero server uploads."
-}) => {
+export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = () => {
   const { t } = useLanguage();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState<string>('');
@@ -210,10 +207,10 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
           AI Background Remover
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          {title}
+          {t('bgRemoverTitle')}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          {description} Fast, secure, and processed entirely within your browser with zero server uploads.
+          {t('bgRemoverDesc')}
         </p>
       </div>
 
@@ -254,7 +251,7 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
             {/* Controls */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Background Detection</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('backgroundDetection')}</label>
                 <div className="flex gap-1">
                   {(['auto', 'white', 'black'] as const).map((m) => (
                     <button
@@ -271,7 +268,7 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Sensitivity / Tolerance ({tolerance})</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('sensitivityTolerance')} ({tolerance})</label>
                 <input
                   type="range"
                   min="5"
@@ -283,7 +280,7 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Background Fill</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">{t('backgroundFill')}</label>
                 <div className="flex gap-1">
                   {[
                     { id: 'transparent', label: 'Trans' },
@@ -308,7 +305,7 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
             {/* Previews */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Original Image</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('originalImage')}</span>
                 <div className="aspect-square rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden p-2">
                   <img src={originalUrl} alt="Original" className="max-h-full max-w-full object-contain" />
                 </div>
@@ -316,7 +313,7 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Background Removed (PNG)</span>
+                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{t('backgroundRemovedPng')}</span>
                 <div 
                   className="aspect-square rounded-xl border-2 border-emerald-500 flex items-center justify-center overflow-hidden p-2 relative"
                   style={{
@@ -328,7 +325,7 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
                 >
                   {status === 'processing' && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center text-xs font-bold text-emerald-600">
-                      Processing background...
+                      {t('processingBackground')}
                     </div>
                   )}
                   {resultUrl && <img src={resultUrl} alt="Result" className="max-h-full max-w-full object-contain" />}
@@ -347,14 +344,14 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
                 className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                Download Transparent PNG ({formatBytes(outputFileSize)})
+                {t('downloadTransparentPng')} ({formatBytes(outputFileSize)})
               </button>
               <button
                 onClick={handleReset}
                 className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
-                Remove Another Background
+                {t('removeAnotherBackground')}
               </button>
             </div>
           </div>
@@ -363,22 +360,22 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = ({
 
       {/* SEO Educational Content */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6 text-slate-700 text-sm">
-        <h2 className="text-xl font-bold text-slate-900">How to remove image background online</h2>
+        <h2 className="text-xl font-bold text-slate-900">{t('howToRemoveBg')}</h2>
         <ol className="list-decimal pl-5 space-y-2">
           <li>Upload your photo or drag and drop it into the upload box.</li>
           <li>Our browser engine instantly detects and removes the background pixels.</li>
-          <li>Adjust tolerance if needed, then click <strong>Download Transparent PNG</strong>.</li>
+          <li>Adjust tolerance if needed, then click <strong>{t('downloadTransparentPng')}</strong>.</li>
         </ol>
 
-        <h3 className="text-lg font-bold text-slate-900 pt-4">Frequently Asked Questions</h3>
+        <h3 className="text-lg font-bold text-slate-900 pt-4">{t('faq')}</h3>
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold text-slate-900">Is my data secure?</h4>
-            <p className="text-xs text-slate-600 mt-1">Yes! All processing happens entirely in your browser using HTML5 Canvas. Your images are never uploaded to any remote server.</p>
+            <h4 className="font-semibold text-slate-900">{t('isMyDataSecure')}</h4>
+            <p className="text-xs text-slate-600 mt-1">{t('isMyDataSecureDesc')}</p>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-900">Do I need to install any software?</h4>
-            <p className="text-xs text-slate-600 mt-1">No, this is a 100% web-based tool accessible from mobile, tablet, and desktop browsers.</p>
+            <h4 className="font-semibold text-slate-900">{t('doINeedSoftware')}</h4>
+            <p className="text-xs text-slate-600 mt-1">{t('doINeedSoftwareDesc')}</p>
           </div>
         </div>
       </div>

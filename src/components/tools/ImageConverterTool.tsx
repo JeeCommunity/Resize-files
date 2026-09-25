@@ -22,6 +22,9 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
   extension,
 }) => {
   const { t } = useLanguage();
+  const toolKey = route.replace('/', '').replace(/-/g, '');
+  const localizedTitle = t(toolKey + 'Title') || title;
+  const localizedDesc = t(toolKey + 'Desc') || description;
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -115,10 +118,10 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
           {fromFormat} to {toFormat} Converter
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          {title}
+          {localizedTitle}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          {description} Fast, secure, and processed entirely within your browser with zero server uploads.
+          {localizedDesc}
         </p>
       </div>
 
@@ -191,7 +194,7 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
                 <div className="aspect-square rounded-xl bg-slate-100 border-2 border-emerald-500 flex items-center justify-center overflow-hidden p-2 relative">
                   {isProcessing && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center text-xs font-bold text-emerald-600">
-                      Converting...
+                      {t('converting')}
                     </div>
                   )}
                   {resultUrl && <img src={resultUrl} alt="Converted" className="max-h-full max-w-full object-contain" />}
@@ -215,7 +218,7 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
                 className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4" />
-                Convert Another
+                {t('convertAnother')}
               </button>
             </div>
           </div>
@@ -231,15 +234,15 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
           <li>Preview the result and click <strong>Download {toFormat}</strong> to save it directly to your device.</li>
         </ol>
 
-        <h3 className="text-lg font-bold text-slate-900 pt-4">Frequently Asked Questions</h3>
+        <h3 className="text-lg font-bold text-slate-900 pt-4">{t('faqHeader')}</h3>
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold text-slate-900">Is my data secure?</h4>
-            <p className="text-xs text-slate-600 mt-1">Yes! All conversions happen entirely in your browser using HTML5 Canvas. Your images are never uploaded to any remote server.</p>
+            <h4 className="font-semibold text-slate-900">{t('faqSecureTitle')}</h4>
+            <p className="text-xs text-slate-600 mt-1">{t('faqSecureDesc')}</p>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-900">Do I need to install any software?</h4>
-            <p className="text-xs text-slate-600 mt-1">No, this is a 100% web-based tool accessible from mobile, tablet, and desktop browsers.</p>
+            <h4 className="font-semibold text-slate-900">{t('faqInstallTitle')}</h4>
+            <p className="text-xs text-slate-600 mt-1">{t('faqInstallDesc')}</p>
           </div>
         </div>
       </div>

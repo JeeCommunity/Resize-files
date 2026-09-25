@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, RefreshCw, Merge, Trash2 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export const MergePdfTool: React.FC = () => {
+  const { t } = useLanguage();
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -74,13 +76,13 @@ export const MergePdfTool: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       <div className="text-center space-y-3">
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wider">
-          PDF Merger
+          {t('pdfTools')}
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Merge Multiple PDF Files
+          {t('mergePdf')}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          Combine multiple PDF documents into a single secure file right in your browser.
+          {t('footerDesc')}
         </p>
       </div>
 
@@ -106,21 +108,21 @@ export const MergePdfTool: React.FC = () => {
             <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
               <Merge className="w-8 h-8" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">Upload PDF Files</h3>
-            <p className="text-xs text-slate-500 mb-4">Select 2 or more PDF documents</p>
+            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('uploadPdfFiles')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('selectTwoOrMorePdfDocs')}</p>
             <button className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              Select PDFs
+              {t('uploadPdf')}
             </button>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Files to Merge ({files.length})</span>
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('filesToMerge')} ({files.length})</span>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer"
               >
-                + Add More PDFs
+                {t('addMorePdfs')}
               </button>
               <input
                 type="file"
@@ -162,7 +164,7 @@ export const MergePdfTool: React.FC = () => {
                   className="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Merge className="w-4 h-4" />
-                  {isProcessing ? 'Merging PDFs...' : `Merge ${files.length} PDFs Now`}
+                  {isProcessing ? t('optimizing') : `${t('mergePdf')} (${files.length})`}
                 </button>
               ) : (
                 <>
@@ -171,14 +173,14 @@ export const MergePdfTool: React.FC = () => {
                     className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
-                    Download Merged PDF ({formatBytes(resultSize)})
+                    {t('downloadPdf')} ({formatBytes(resultSize)})
                   </button>
                   <button
                     onClick={handleReset}
                     className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Start Over
+                    {t('startOver')}
                   </button>
                 </>
               )}

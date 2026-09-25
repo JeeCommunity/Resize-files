@@ -32,45 +32,45 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, selectedCountry, sel
         <div className="space-y-3">
           <h4 className="text-xs font-bold text-white uppercase tracking-wider">{getTranslation(lang, 'imageTools')}</h4>
           <ul className="space-y-2 text-xs">
-            <li><button onClick={() => onNavigate('/')} className="hover:text-white transition-colors cursor-pointer">Compress Image</button></li>
-            <li><button onClick={() => onNavigate('/image-resizer')} className="hover:text-white transition-colors cursor-pointer">Resize Image</button></li>
-            <li><button onClick={() => onNavigate('/compress-image-to-20kb')} className="hover:text-white transition-colors cursor-pointer">Compress to 20KB</button></li>
-            <li><button onClick={() => onNavigate('/compress-image-to-50kb')} className="hover:text-white transition-colors cursor-pointer">Compress to 50KB</button></li>
-            <li><button onClick={() => onNavigate('/compress-image-to-100kb')} className="hover:text-white transition-colors cursor-pointer">Compress to 100KB</button></li>
-            <li><button onClick={() => onNavigate('/jpg-to-png')} className="hover:text-white transition-colors cursor-pointer">JPG to PNG Converter</button></li>
+            <li><button onClick={() => onNavigate('/')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'compressImage')}</button></li>
+            <li><button onClick={() => onNavigate('/image-resizer')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'imageResizer')}</button></li>
+            <li><button onClick={() => onNavigate('/compress-image-to-20kb')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'compressTo20kb')}</button></li>
+            <li><button onClick={() => onNavigate('/compress-image-to-50kb')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'compressTo50kb')}</button></li>
+            <li><button onClick={() => onNavigate('/compress-image-to-100kb')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'compressTo100kb')}</button></li>
+            <li><button onClick={() => onNavigate('/jpg-to-png')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'jpgToPng')}</button></li>
           </ul>
         </div>
 
         <div className="space-y-3">
           <h4 className="text-xs font-bold text-white uppercase tracking-wider">{getTranslation(lang, 'pdfTools')}</h4>
           <ul className="space-y-2 text-xs">
-            <li><button onClick={() => onNavigate('/image-to-pdf')} className="hover:text-white transition-colors cursor-pointer">Images to PDF</button></li>
-            <li><button onClick={() => onNavigate('/pdf-to-jpg')} className="hover:text-white transition-colors cursor-pointer">PDF to Images</button></li>
-            <li><button onClick={() => onNavigate('/merge-pdf')} className="hover:text-white transition-colors cursor-pointer">Merge PDF</button></li>
-            <li><button onClick={() => onNavigate('/split-pdf')} className="hover:text-white transition-colors cursor-pointer">Split PDF</button></li>
-            <li><button onClick={() => onNavigate('/compress-pdf')} className="hover:text-white transition-colors cursor-pointer">Compress PDF</button></li>
+            <li><button onClick={() => onNavigate('/image-to-pdf')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'imageToPdf')}</button></li>
+            <li><button onClick={() => onNavigate('/pdf-to-jpg')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'pdfToJpg')}</button></li>
+            <li><button onClick={() => onNavigate('/merge-pdf')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'mergePdf')}</button></li>
+            <li><button onClick={() => onNavigate('/split-pdf')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'splitPdf')}</button></li>
+            <li><button onClick={() => onNavigate('/compress-pdf')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'compressPdf')}</button></li>
           </ul>
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider">Company & Legal</h4>
+          <h4 className="text-xs font-bold text-white uppercase tracking-wider">{getTranslation(lang, 'companyLegal')}</h4>
           <ul className="space-y-2 text-xs">
-            <li><button onClick={() => onNavigate('/about')} className="hover:text-white transition-colors cursor-pointer">About Us</button></li>
-            <li><button onClick={() => onNavigate('/privacy')} className="hover:text-white transition-colors cursor-pointer">Privacy Policy</button></li>
-            <li><button onClick={() => onNavigate('/terms')} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button></li>
-            <li><button onClick={() => onNavigate('/contact')} className="hover:text-white transition-colors cursor-pointer">Contact Us</button></li>
-            <li><button onClick={() => onNavigate('/admin')} className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors cursor-pointer flex items-center gap-1">🔒 Admin Dashboard</button></li>
+            <li><button onClick={() => onNavigate('/about')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'aboutUs')}</button></li>
+            <li><button onClick={() => onNavigate('/privacy')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'privacyPolicy')}</button></li>
+            <li><button onClick={() => onNavigate('/terms')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'termsOfService')}</button></li>
+            <li><button onClick={() => onNavigate('/contact')} className="hover:text-white transition-colors cursor-pointer">{getTranslation(lang, 'contactUs')}</button></li>
+            <li><button onClick={() => onNavigate('/admin')} className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors cursor-pointer flex items-center gap-1">🔒 {getTranslation(lang, 'adminDashboard')}</button></li>
           </ul>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-        <div>&copy; {new Date().getFullYear()} {getTranslation(lang, 'appTitle')}. All rights reserved. 100% Client-Side Processing.</div>
+        <div>&copy; {new Date().getFullYear()} {getTranslation(lang, 'appTitle')}. {getTranslation(lang, 'allRightsReserved')}</div>
         <div className="flex items-center space-x-6">
-          <button onClick={() => onNavigate('/privacy')} className="hover:text-slate-400 cursor-pointer">Privacy</button>
-          <button onClick={() => onNavigate('/terms')} className="hover:text-slate-400 cursor-pointer">Terms</button>
-          <button onClick={() => onNavigate('/about')} className="hover:text-slate-400 cursor-pointer">About</button>
-          <button onClick={() => onNavigate('/contact')} className="hover:text-slate-400 cursor-pointer">Contact</button>
+          <button onClick={() => onNavigate('/privacy')} className="hover:text-slate-400 cursor-pointer">{getTranslation(lang, 'privacy')}</button>
+          <button onClick={() => onNavigate('/terms')} className="hover:text-slate-400 cursor-pointer">{getTranslation(lang, 'terms')}</button>
+          <button onClick={() => onNavigate('/about')} className="hover:text-slate-400 cursor-pointer">{getTranslation(lang, 'about')}</button>
+          <button onClick={() => onNavigate('/contact')} className="hover:text-slate-400 cursor-pointer">{getTranslation(lang, 'contact')}</button>
         </div>
       </div>
     </footer>
