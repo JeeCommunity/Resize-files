@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y ghostscript && rm -rf /var/lib/apt/list
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
