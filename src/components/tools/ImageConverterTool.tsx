@@ -48,44 +48,38 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
     processImage(selectedFile, mimeType, bgChoice);
   };
 
-  const processImage = (imgFile: File, targetMime: string, bg: 'white' | 'black' | 'transparent') => {
+  const processImage = async (imgFile: File, targetMime: string, bg: 'white' | 'black' | 'transparent') => {
     setIsProcessing(true);
-    setProcessingProgress(20);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setProcessingProgress(50);
-      const img = new Image();
-      img.onload = () => {
-        setProcessingProgress(75);
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          setIsProcessing(false);
-          setProcessingProgress(0);
-          return;
-        }
+    setProcessingProgress(30);
 
-        if (targetMime === 'image/jpeg') {
-          ctx.fillStyle = bg === 'black' ? '#000000' : '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+    try {
+      const formData = new FormData();
+      formData.append('file', imgFile);
+      formData.append('operation', 'convert');
+      formData.append('format', extension);
 
-        ctx.drawImage(img, 0, 0);
+      setProcessingProgress(60);
 
-        canvas.toBlob((blob) => {
-          if (blob) {
-            setResultUrl(URL.createObjectURL(blob));
-            setResultSize(blob.size);
-          }
-          setProcessingProgress(100);
-          setIsProcessing(false);
-        }, targetMime, 0.92);
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(imgFile);
+      const response = await fetch('/api/cloudinary-process', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Cloudinary processing failed');
+      }
+
+      setResultUrl(data.url);
+      setResultSize(data.bytes || imgFile.size);
+      setProcessingProgress(100);
+    } catch (err) {
+      console.error('Conversion error:', err);
+      alert('Cloudinary conversion failed. Please check your credentials.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleBgChange = (newBg: 'white' | 'black' | 'transparent') => {

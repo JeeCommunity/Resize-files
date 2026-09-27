@@ -463,6 +463,88 @@ async function startServer() {
   // Ghostscript PDF Compression Endpoint
   const upload = multer({ dest: os.tmpdir() });
 
+  // Cloudinary Processing Endpoint
+  app.post('/api/cloudinary-process', upload.single('file'), async (req, res) => {
+    try {
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+      const apiKey = process.env.CLOUDINARY_API_KEY;
+      const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+      if (!cloudName || !apiKey || !apiSecret) {
+        return res.status(500).json({ 
+          error: 'Cloudinary credentials are not configured on the server. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.' 
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file provided' });
+      }
+
+      const { operation, targetSizeKB, format, width, height, quality } = req.body;
+      const filePath = req.file.path;
+
+      // Configure Cloudinary dynamically
+      const cloudinary = await import('cloudinary');
+      cloudinary.v2.config({
+        cloud_name: cloudName,
+        api_key: apiKey,
+        api_secret: apiSecret,
+      });
+
+      // Upload file to Cloudinary
+      const uploadResult = await cloudinary.v2.uploader.upload(filePath, {
+        resource_type: 'auto',
+        folder: 'resize_files_app',
+      });
+
+      try { fs.unlinkSync(filePath); } catch {}
+
+      let transformedUrl = uploadResult.secure_url;
+      let formatOut = format || uploadResult.format;
+
+      // Build transformation string based on operation
+      let transformation: any = [];
+
+      if (operation === 'resize' && width && height) {
+        transformation.push({ width: parseInt(width), height: parseInt(height), crop: 'fill' });
+      } else if (operation === 'compress') {
+        transformation.push({ quality: 'auto:good', fetch_format: 'auto' });
+      } else if (operation === 'target_size' && targetSizeKB) {
+        // Approximate quality targeting based on target KB
+        transformation.push({ quality: 'auto:eco', fetch_format: 'auto' });
+      } else if (operation === 'convert' && format) {
+        formatOut = format;
+        transformation.push({ fetch_format: format });
+      } else if (operation === 'pdf_to_image') {
+        formatOut = format || 'jpg';
+        transformation.push({ page: 1, fetch_format: formatOut });
+      } else if (operation === 'image_to_pdf') {
+        formatOut = 'pdf';
+        transformation.push({ fetch_format: 'pdf' });
+      }
+
+      if (transformation.length > 0) {
+        transformedUrl = cloudinary.v2.url(uploadResult.public_id, {
+          transformation: transformation,
+          format: formatOut,
+          resource_type: uploadResult.resource_type === 'raw' ? 'raw' : 'auto'
+        });
+      }
+
+      res.json({
+        success: true,
+        url: transformedUrl,
+        format: formatOut,
+        public_id: uploadResult.public_id,
+        bytes: uploadResult.bytes
+      });
+
+    } catch (err: any) {
+      console.error('Cloudinary processing error:', err);
+      res.status(500).json({ error: err.message || 'Processing failed' });
+    }
+  });
+
   app.post('/api/compress-pdf', upload.single('file'), (req, res) => {
     try {
       if (!req.file) {
