@@ -1,0 +1,14 @@
+{
+  "name": "ghostscript-pdf-compressor",
+  "version": "1.0.0",
+  "description": "Ghostscript PDF Compression backend for Render.com",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

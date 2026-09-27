@@ -10,34 +10,55 @@ export const CompressPdfTool: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultSize, setResultSize] = useState<number>(0);
+  const [renderUrl, setRenderUrl] = useState<string>(() => localStorage.getItem('render_gs_url') || 'https://your-render-service.onrender.com');
+  const [quality, setQuality] = useState<string>('ebook');
+  const [statusMessage, setStatusMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelected = (selectedFile: File) => {
     setFile(selectedFile);
     setOriginalSize(selectedFile.size);
     setResultUrl(null);
+    setStatusMessage('');
   };
 
   const handleCompress = async () => {
     if (!file) return;
     setIsProcessing(true);
+    setStatusMessage('Compressing via Ghostscript on secure server (First request after inactivity may take 30–50 seconds for cold start)...');
 
     try {
-      const arrayBuf = await file.arrayBuffer();
-      // Load PDF and save with object streams / compression enabled in pdf-lib
-      const pdf = await PDFDocument.load(arrayBuf);
-      
-      const pdfBytes = await pdf.save({
-        useObjectStreams: true,
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('quality', quality);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for cold start
+
+      const response = await fetch(`${renderUrl.replace(/\/$/, '')}/api/compress-pdf`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
       });
 
-      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-      // If optimized size is accidentally larger, ensure we still provide a valid compressed output
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server responded with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
       setResultUrl(URL.createObjectURL(blob));
       setResultSize(blob.size);
-    } catch (err) {
-      console.error('Error compressing PDF:', err);
-      alert('Failed to compress PDF document.');
+      setStatusMessage('');
+    } catch (err: any) {
+      console.error('Render Ghostscript compression error:', err);
+      if (err.name === 'AbortError') {
+        setStatusMessage('Server is waking up from inactivity. Please try again in a moment.');
+      } else {
+        setStatusMessage(`Compression failed: ${err.message || 'Please check Render backend URL and connection.'}`);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -114,6 +135,53 @@ export const CompressPdfTool: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-xs text-amber-800 space-y-2">
+              <p className="font-bold flex items-center gap-1.5">⚡ Secure Server Processing (Ghostscript on Render)</p>
+              <p>Files are compressed on a secure backend server. Note: Render free tier sleeps after 15 min of inactivity; the first request may take 30–50 seconds to wake up.</p>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="font-semibold text-slate-700">Render URL:</span>
+                <input
+                  type="text"
+                  value={renderUrl}
+                  onChange={(e) => {
+                    setRenderUrl(e.target.value);
+                    localStorage.setItem('render_gs_url', e.target.value);
+                  }}
+                  placeholder="https://your-service.onrender.com"
+                  className="flex-1 px-3 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 text-xs mb-2">Compression Level</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'screen', name: 'Low (Smallest, 72 dpi)' },
+                  { id: 'ebook', name: 'Medium (Balanced, 150 dpi)' },
+                  { id: 'printer', name: 'High (Best, 300 dpi)' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setQuality(item.id)}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      quality === item.id
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {statusMessage && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 font-medium">
+                {statusMessage}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">{t('originalSize')}</span>

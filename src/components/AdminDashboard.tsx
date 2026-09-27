@@ -640,7 +640,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <p>Admin credentials are secured via environment variables:</p>
                 <ul className="list-disc pl-5 space-y-1 font-mono text-[11px] text-slate-700">
                   <li>ADMIN_USERNAME (Default: admin)</li>
-                  <li>ADMIN_PASSWORD (Default: ResizeToKB@2026!)</li>
+                  <li>ADMIN_PASSWORD (Default: @aniketk1999#)</li>
                 </ul>
               </div>
 

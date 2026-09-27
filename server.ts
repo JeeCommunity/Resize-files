@@ -81,19 +81,22 @@ async function initDb() {
 
   saveDb();
 
-  // Seed default admin if none exists
-  const res = db.exec("SELECT COUNT(*) as count FROM admins");
-  const count = res[0]?.values[0][0] || 0;
-  if (count === 0) {
-    const defaultUser = process.env.ADMIN_USERNAME || 'admin';
-    const defaultPass = process.env.ADMIN_PASSWORD || 'ResizeToKB@2026!';
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.pbkdf2Sync(defaultPass, salt, 1000, 64, 'sha512').toString('hex');
-    const passwordHash = `${salt}:${hash}`;
-    
+  // Seed or update default admin user
+  const defaultUser = process.env.ADMIN_USERNAME || 'admin';
+  const defaultPass = process.env.ADMIN_PASSWORD || '@aniketk1999#';
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(defaultPass, salt, 1000, 64, 'sha512').toString('hex');
+  const passwordHash = `${salt}:${hash}`;
+
+  const existingAdmins = runQuery("SELECT * FROM admins WHERE username = ?", [defaultUser]);
+  if (existingAdmins.length === 0) {
     db.run("INSERT INTO admins (username, password_hash, created_at) VALUES (?, ?, datetime('now'))", [defaultUser, passwordHash]);
     saveDb();
     console.log(`[Admin Setup] Created default admin user: "${defaultUser}"`);
+  } else {
+    db.run("UPDATE admins SET password_hash = ? WHERE username = ?", [passwordHash, defaultUser]);
+    saveDb();
+    console.log(`[Admin Setup] Updated default admin password for: "${defaultUser}"`);
   }
 }
 

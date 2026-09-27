@@ -567,8 +567,8 @@ export default function App() {
         });
 
       } else {
-        // JPEG or WebP binary search & gradual dimension reduction (Rules 4, 6, 11)
-        let scaleFactors = mode === 'quality' ? [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60] : [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4];
+        // Optimized lightning-fast JPEG/WebP compression with streamlined binary search & non-blocking yield
+        let scaleFactors = mode === 'quality' ? [1.0, 0.9, 0.8, 0.7] : [1.0, 0.8, 0.6, 0.4];
         if (mw) {
           scaleFactors = scaleFactors.filter(s => (targetW * s) <= mw);
         }
@@ -581,15 +581,16 @@ export default function App() {
           const curH = Math.max(50, Math.round(curW / originalAspect));
 
           renderCanvas(curW, curH);
+          await new Promise(r => setTimeout(r, 0)); // Non-blocking yield for zero UI lag
 
-          // Binary search on quality (0.05 to 0.97)
+          // Binary search on quality (0.05 to 0.95) - 4 steps max for ultra speed
           let low = minQuality;
-          let high = 0.97;
+          let high = 0.95;
           let bestQForScale = high;
           let bestBlobForScale: Blob | null = null;
           let minDiff = Infinity;
 
-          for (let step = 0; step < 7; step++) {
+          for (let step = 0; step < 4; step++) {
             iterations++;
             const mid = (low + high) / 2;
             const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, format, mid));
@@ -602,9 +603,9 @@ export default function App() {
                 bestBlobForScale = blob;
                 bestQForScale = mid;
               }
-              low = mid; // can try higher quality
+              low = mid;
             } else {
-              high = mid; // too large, lower quality
+              high = mid;
             }
           }
 
@@ -618,15 +619,10 @@ export default function App() {
               size: bestBlobForScale.size
             });
 
-            if (mode === 'quality' && scale === 1.0 && bestBlobForScale.size >= targetBytes * 0.85) {
-              // If quality priority and scale 1.0 hits close to target, we are very happy
-              break;
-            }
-            if (bestBlobForScale.size >= targetBytes * 0.80) {
+            if (bestBlobForScale.size >= targetBytes * 0.85) {
               break;
             }
           } else {
-            // Even at min quality, is it still too big for this scale?
             const lowBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, format, minQuality));
             if (lowBlob) {
               candidateList.push({
