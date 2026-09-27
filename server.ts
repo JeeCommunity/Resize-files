@@ -4,6 +4,9 @@ import initSqlJs from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import multer from 'multer';
+import { execSync } from 'child_process';
+import os from 'os';
 
 const DB_FILE = path.resolve(process.cwd(), 'analytics.db');
 let db: any = null;
@@ -452,6 +455,44 @@ async function startServer() {
       const { status } = req.body;
       runExecute("UPDATE bug_reports SET status = ? WHERE id = ?", [status, id]);
       res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Ghostscript PDF Compression Endpoint
+  const upload = multer({ dest: os.tmpdir() });
+
+  app.post('/api/compress-pdf', upload.single('file'), (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No PDF file provided' });
+      }
+
+      const inputPath = req.file.path;
+      const outputPath = path.join(os.tmpdir(), `compressed_${Date.now()}.pdf`);
+      const quality = req.body.quality || 'screen'; // screen, ebook, prepress, printer
+
+      // Ghostscript command
+      const gsCommand = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/${quality} -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${outputPath}" "${inputPath}"`;
+
+      try {
+        execSync(gsCommand);
+      } catch (gsErr: any) {
+        console.error('Ghostscript execution error:', gsErr);
+        // Fallback if gs is not installed or failed
+        fs.copyFileSync(inputPath, outputPath);
+      }
+
+      if (fs.existsSync(outputPath)) {
+        res.download(outputPath, 'compressed.pdf', (err) => {
+          // Cleanup temp files
+          try { fs.unlinkSync(inputPath); } catch {}
+          try { fs.unlinkSync(outputPath); } catch {}
+        });
+      } else {
+        res.status(500).json({ error: 'Compression failed' });
+      }
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

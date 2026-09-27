@@ -568,7 +568,9 @@ export default function App() {
 
       } else {
         // Optimized lightning-fast JPEG/WebP compression with streamlined binary search & non-blocking yield
-        let scaleFactors = mode === 'quality' ? [1.0, 0.9, 0.8, 0.7] : [1.0, 0.8, 0.6, 0.4];
+        let scaleFactors = mode === 'quality' 
+          ? (targetKB <= 35 ? [1.0, 0.8, 0.6, 0.4, 0.3] : [1.0, 0.9, 0.8, 0.7]) 
+          : [1.0, 0.7, 0.4, 0.25];
         if (mw) {
           scaleFactors = scaleFactors.filter(s => (targetW * s) <= mw);
         }
@@ -1461,7 +1463,9 @@ export default function App() {
                     )}
                     <span className="truncate">
                       {sizeMode === 'under'
-                        ? `${getTranslation(selectedLang, 'guaranteedUnderTarget')} ${formatBytes(result.sizeBytes)} (≤ ${effectiveTargetKB} KB)`
+                        ? (isTargetReached 
+                            ? `${getTranslation(selectedLang, 'guaranteedUnderTarget')} ${formatBytes(result.sizeBytes)} (≤ ${effectiveTargetKB} KB)`
+                            : `Closest achieved: ${formatBytes(result.sizeBytes)} (Target ≤ ${effectiveTargetKB} KB)`)
                         : `Target: ${effectiveTargetKB} KB | Output: ${formatBytes(result.sizeBytes)}`}
                     </span>
                   </div>
