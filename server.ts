@@ -107,28 +107,30 @@ function saveDb() {
   }
 }
 
+// Helper for running queries with params
+function runQuery(sql: string, params: any[] = []) {
+  if (!db) return [];
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const results: any[] = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return results;
+}
+
+function runExecute(sql: string, params: any[] = []) {
+  if (!db) return;
+  db.run(sql, params);
+  saveDb();
+}
+
 async function startServer() {
   await initDb();
 
   const app = express();
   app.use(express.json());
-
-  // Helper for running queries with params
-  function runQuery(sql: string, params: any[] = []) {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const results: any[] = [];
-    while (stmt.step()) {
-      results.push(stmt.getAsObject());
-    }
-    stmt.free();
-    return results;
-  }
-
-  function runExecute(sql: string, params: any[] = []) {
-    db.run(sql, params);
-    saveDb();
-  }
 
   // Middleware to verify admin session
   function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
