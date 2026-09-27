@@ -10,7 +10,7 @@ export const CompressPdfTool: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultSize, setResultSize] = useState<number>(0);
-  const [renderUrl, setRenderUrl] = useState<string>(() => localStorage.getItem('render_gs_url') || 'https://your-render-service.onrender.com');
+  const [renderUrl, setRenderUrl] = useState<string>(() => localStorage.getItem('render_gs_url') || 'https://resize-files-y8ua.onrender.com');
   const [quality, setQuality] = useState<string>('ebook');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
