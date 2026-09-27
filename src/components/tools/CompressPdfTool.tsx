@@ -10,13 +10,7 @@ export const CompressPdfTool: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [resultSize, setResultSize] = useState<number>(0);
-  const [renderUrl, setRenderUrl] = useState<string>(() => {
-    const saved = localStorage.getItem('render_gs_url');
-    if (!saved || saved.includes('your-render-service')) {
-      return 'https://resize-files-y8ua.onrender.com';
-    }
-    return saved;
-  });
+  const renderUrl = 'https://resize-files-y8ua.onrender.com';
   const [quality, setQuality] = useState<string>('ebook');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,23 +135,7 @@ export const CompressPdfTool: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-xs text-amber-800 space-y-2">
-              <p className="font-bold flex items-center gap-1.5">⚡ Secure Server Processing (Ghostscript on Render)</p>
-              <p>Files are compressed on a secure backend server. Note: Render free tier sleeps after 15 min of inactivity; the first request may take 30–50 seconds to wake up.</p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="font-semibold text-slate-700">Render URL:</span>
-                <input
-                  type="text"
-                  value={renderUrl}
-                  onChange={(e) => {
-                    setRenderUrl(e.target.value);
-                    localStorage.setItem('render_gs_url', e.target.value);
-                  }}
-                  placeholder="https://your-service.onrender.com"
-                  className="flex-1 px-3 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono"
-                />
-              </div>
-            </div>
+
 
             <div>
               <label className="block font-bold text-slate-700 text-xs mb-2">Compression Level</label>
