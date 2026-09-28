@@ -54,7 +54,7 @@ export const BackgroundRemoverTool: React.FC = () => {
     formData.append("file", imageFile);
     formData.append("model", "u2netp"); // Fast & lightweight model
 
-    const response = await fetch("https://background-removal.resizefiles.blitz.cloud/remove-background", {
+    const response = await fetch("/api/background-removal", {
         method: "POST",
         body: formData
     });
