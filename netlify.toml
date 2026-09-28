@@ -1,6 +1,12 @@
 [build]
   publish = "dist"
   command = "npm run build"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/background-removal"
+  to = "/.netlify/functions/background-removal"
+  status = 200
 
 [[redirects]]
   from = "/*"
