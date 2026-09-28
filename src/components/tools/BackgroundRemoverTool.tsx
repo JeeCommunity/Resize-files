@@ -3,39 +3,31 @@ import {
   Upload, 
   Download, 
   RefreshCw, 
-  CheckCircle2, 
   AlertCircle, 
-  ShieldCheck, 
   Sparkles, 
-  Palette,
-  Sliders
+  ShieldCheck,
+  Cpu
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
-interface BackgroundRemoverToolProps {
-  title?: string;
-  description?: string;
-}
-
-export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = () => {
+export const BackgroundRemoverTool: React.FC = () => {
   const { t } = useLanguage();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState<string>('');
-  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [resultUrl, setResultUrl] = useState<string>('');
-  
-  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading_model' | 'processing' | 'success' | 'error'>('idle');
+  const [progressMessage, setProgressMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  
-  const [removalMode, setRemovalMode] = useState<'white' | 'black' | 'auto'>('auto');
-  const [tolerance, setTolerance] = useState<number>(35);
-  const [bgColor, setBgColor] = useState<string>('transparent');
-  const [processingTimeMs, setProcessingTimeMs] = useState<number>(0);
-  const [outputFileSize, setOutputFileSize] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<'bg' | 'crop' | 'adjust'>('bg');
+
+  // Editor states
+  const [width, setWidth] = useState<number>(800);
+  const [height, setHeight] = useState<number>(800);
+  const [blur, setBlur] = useState<number>(0);
+  const [grayscale, setGrayscale] = useState<boolean>(false);
+  const [sepia, setSepia] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState<boolean>(false);
 
   const handleFileSelected = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -43,342 +35,303 @@ export const BackgroundRemoverTool: React.FC<BackgroundRemoverToolProps> = () =>
       setStatus('error');
       return;
     }
-
-    if (file.size > 40 * 1024 * 1024) {
-      setErrorMessage('Image size is too large (> 40MB). Please select a smaller image.');
+    if (file.size > 50 * 1024 * 1024) {
+      setErrorMessage('File size exceeds 50MB limit.');
       setStatus('error');
       return;
     }
 
     setErrorMessage('');
     setSelectedFile(file);
-    setResultBlob(null);
+    if (originalUrl) URL.revokeObjectURL(originalUrl);
+    setOriginalUrl(URL.createObjectURL(file));
     setResultUrl('');
     setStatus('idle');
-
-    if (originalUrl) URL.revokeObjectURL(originalUrl);
-    const url = URL.createObjectURL(file);
-    setOriginalUrl(url);
-
-    const img = new window.Image();
-    img.onload = () => {
-      setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-      processImage(file, removalMode, tolerance, bgColor);
-    };
-    img.src = url;
   };
 
-  const processImage = (fileToProcess: File, mode: 'white' | 'black' | 'auto', tol: number, bg: string) => {
-    const startTime = performance.now();
-    setStatus('processing');
+  async function removeBackgroundFromResizeFiles(imageFile: File) {
+    const formData = new FormData();
+    formData.append("file", imageFile);
+    formData.append("model", "u2netp"); // Fast & lightweight model
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new window.Image();
-      img.onload = () => {
+    const response = await fetch("https://background-removal.resizefiles.blitz.cloud/remove-background", {
+        method: "POST",
+        body: formData
+        // Note: Do not pass custom headers (like Content-Type) when using FormData, 
+        // browser automatically sets multipart/form-data boundary!
+    });
+
+    if (!response.ok) {
+        throw new Error("Server error during background removal");
+    }
+
+    const blob = await response.blob();
+    const imageUrl = URL.createObjectURL(blob);
+    return imageUrl; // Transparent PNG image URL
+  }
+
+  const processImageLocally = async (operationType: string) => {
+    if (!selectedFile) return;
+    setErrorMessage('');
+
+    try {
+      if (operationType === 'bg_remove') {
+        setStatus('loading_model');
+        setProgressMessage('Uploading image to background removal backend...');
+
+        const imageUrl = await removeBackgroundFromResizeFiles(selectedFile);
+        if (!imageUrl) {
+          throw new Error('Background removal failed.');
+        }
+
+        setStatus('success');
+        setResultUrl(imageUrl);
+      } else {
+        // Fallback local canvas processing for resize/filters
+        setStatus('processing');
+        setProgressMessage('Processing image locally...');
+
+        const img = new Image();
+        img.src = originalUrl;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          setStatus('error');
-          setErrorMessage('Could not initialize canvas context.');
-          return;
-        }
+        if (!ctx) throw new Error('Canvas context failed');
 
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        ctx.drawImage(img, 0, 0);
+        const w = width || img.naturalWidth;
+        const h = height || img.naturalHeight;
+        canvas.width = w;
+        canvas.height = h;
 
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
+        if (grayscale) ctx.filter = 'grayscale(100%)';
+        if (sepia) ctx.filter = (ctx.filter ? ctx.filter + ' ' : '') + 'sepia(100%)';
+        if (blur > 0) ctx.filter = (ctx.filter ? ctx.filter + ' ' : '') + `blur(${blur}px)`;
 
-        // Determine background color to remove
-        let targetR = 255, targetG = 255, targetB = 255;
-        if (mode === 'black') {
-          targetR = 0; targetG = 0; targetB = 0;
-        } else if (mode === 'auto') {
-          // Sample top-left corner pixel as background reference
-          targetR = data[0];
-          targetG = data[1];
-          targetB = data[2];
-        }
-
-        // Process pixels
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          // Calculate color distance from target background
-          const diff = Math.sqrt(
-            Math.pow(r - targetR, 2) +
-            Math.pow(g - targetG, 2) +
-            Math.pow(b - targetB, 2)
-          );
-
-          if (diff <= tol) {
-            if (bg === 'transparent') {
-              data[i + 3] = 0; // Make transparent
-            } else if (bg === 'white') {
-              data[i] = 255; data[i + 1] = 255; data[i + 2] = 255; data[i + 3] = 255;
-            } else if (bg === 'black') {
-              data[i] = 0; data[i + 1] = 0; data[i + 2] = 0; data[i + 3] = 255;
-            } else if (bg === 'red') {
-              data[i] = 239; data[i + 1] = 68; data[i + 2] = 68; data[i + 3] = 255;
-            } else if (bg === 'blue') {
-              data[i] = 59; data[i + 1] = 130; data[i + 2] = 246; data[i + 3] = 255;
-            }
-          }
-        }
-
-        ctx.putImageData(imgData, 0, 0);
+        ctx.drawImage(img, 0, 0, w, h);
 
         canvas.toBlob((blob) => {
           if (blob) {
-            setResultBlob(blob);
             setResultUrl(URL.createObjectURL(blob));
-            setOutputFileSize(blob.size);
-            const endTime = performance.now();
-            setProcessingTimeMs(Math.round(endTime - startTime));
             setStatus('success');
           } else {
-            setStatus('error');
-            setErrorMessage('Failed to generate output image.');
+            throw new Error('Failed to generate image blob');
           }
-        }, 'image/png', 0.95);
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(fileToProcess);
-  };
-
-  const handleModeChange = (newMode: 'white' | 'black' | 'auto') => {
-    setRemovalMode(newMode);
-    if (selectedFile) {
-      processImage(selectedFile, newMode, tolerance, bgColor);
+        }, 'image/png');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setStatus('error');
+      setErrorMessage(err.message || 'Background removal failed.');
     }
-  };
-
-  const handleToleranceChange = (newTol: number) => {
-    setTolerance(newTol);
-    if (selectedFile) {
-      processImage(selectedFile, removalMode, newTol, bgColor);
-    }
-  };
-
-  const handleBgColorChange = (newBg: string) => {
-    setBgColor(newBg);
-    if (selectedFile) {
-      processImage(selectedFile, removalMode, tolerance, newBg);
-    }
-  };
-
-  const handleDownload = () => {
-    if (!resultBlob || !selectedFile) return;
-    const baseName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) || 'image';
-    const link = document.createElement('a');
-    link.href = resultUrl;
-    link.download = `${baseName}_no_bg.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleReset = () => {
-    setSelectedFile(null);
-    setOriginalUrl('');
-    setResultBlob(null);
-    setResultUrl('');
-    setStatus('idle');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 KB';
-    const kb = bytes / 1000;
-    if (kb < 1000) return `${kb.toFixed(2)} KB`;
-    return `${(kb / 1000).toFixed(2)} MB`;
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      {/* Header SEO section */}
-      <div className="text-center space-y-3">
-        <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center justify-center gap-2">
+          <Sparkles className="w-8 h-8 text-indigo-600" />
           AI Background Remover
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          {t('bgRemoverTitle')}
         </h1>
-        <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
-          {t('bgRemoverDesc')}
+        <p className="text-gray-600 mt-2 max-w-2xl mx-auto">
+          Remove backgrounds instantly using high-performance AI background removal backend.
         </p>
-      </div>
-
-      {/* Main Tool Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-        {!selectedFile ? (
-          <div
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              e.dataTransfer.files?.[0] && handleFileSelected(e.dataTransfer.files[0]);
-            }}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
-              dragOver ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-300 hover:border-emerald-500 hover:bg-slate-50'
-            }`}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={(e) => e.target.files?.[0] && handleFileSelected(e.target.files[0])}
-              accept="image/*"
-              className="hidden"
-            />
-            <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
-              <Upload className="w-8 h-8" />
-            </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1">{t('dragAndDrop')}</h3>
-            <p className="text-xs text-slate-500 mb-4">{t('supports')}</p>
-            <button className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer">
-              {t('choosePhoto')}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('backgroundDetection')}</label>
-                <div className="flex gap-1">
-                  {(['auto', 'white', 'black'] as const).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => handleModeChange(m)}
-                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold uppercase border transition-all cursor-pointer ${
-                        removalMode === m ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('sensitivityTolerance')} ({tolerance})</label>
-                <input
-                  type="range"
-                  min="5"
-                  max="100"
-                  value={tolerance}
-                  onChange={(e) => handleToleranceChange(Number(e.target.value))}
-                  className="w-full accent-emerald-600 mt-2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">{t('backgroundFill')}</label>
-                <div className="flex gap-1">
-                  {[
-                    { id: 'transparent', label: 'Trans' },
-                    { id: 'white', label: 'White' },
-                    { id: 'red', label: 'Red' },
-                    { id: 'blue', label: 'Blue' }
-                  ].map((bg) => (
-                    <button
-                      key={bg.id}
-                      onClick={() => handleBgColorChange(bg.id)}
-                      className={`flex-1 py-1.5 px-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                        bgColor === bg.id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      {bg.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Previews */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('originalImage')}</span>
-                <div className="aspect-square rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden p-2">
-                  <img src={originalUrl} alt="Original" className="max-h-full max-w-full object-contain" />
-                </div>
-                <div className="text-xs text-slate-500 text-right">{imageDimensions.width}x{imageDimensions.height} px ({formatBytes(selectedFile.size)})</div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{t('backgroundRemovedPng')}</span>
-                <div 
-                  className="aspect-square rounded-xl border-2 border-emerald-500 flex items-center justify-center overflow-hidden p-2 relative"
-                  style={{
-                    backgroundColor: bgColor === 'transparent' ? undefined : bgColor,
-                    backgroundImage: bgColor === 'transparent' ? 'linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%)' : undefined,
-                    backgroundSize: '16px 16px',
-                    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
-                  }}
-                >
-                  {status === 'processing' && (
-                    <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center text-xs font-bold text-emerald-600">
-                      {t('processingBackground')}
-                    </div>
-                  )}
-                  {resultUrl && <img src={resultUrl} alt="Result" className="max-h-full max-w-full object-contain" />}
-                </div>
-                <div className="text-xs font-semibold text-emerald-700 text-right">
-                  {status === 'success' ? `${formatBytes(outputFileSize)} • ${processingTimeMs}ms` : '...'}
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
-              <button
-                onClick={handleDownload}
-                disabled={status === 'processing' || !resultUrl}
-                className="flex-1 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                {t('downloadTransparentPng')} ({formatBytes(outputFileSize)})
-              </button>
-              <button
-                onClick={handleReset}
-                className="py-3.5 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <RefreshCw className="w-4 h-4" />
-                {t('removeAnotherBackground')}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* SEO Educational Content */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6 text-slate-700 text-sm">
-        <h2 className="text-xl font-bold text-slate-900">{t('howToRemoveBg')}</h2>
-        <ol className="list-decimal pl-5 space-y-2">
-          <li>Upload your photo or drag and drop it into the upload box.</li>
-          <li>Our browser engine instantly detects and removes the background pixels.</li>
-          <li>Adjust tolerance if needed, then click <strong>{t('downloadTransparentPng')}</strong>.</li>
-        </ol>
-
-        <h3 className="text-lg font-bold text-slate-900 pt-4">{t('faq')}</h3>
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold text-slate-900">{t('isMyDataSecure')}</h4>
-            <p className="text-xs text-slate-600 mt-1">{t('isMyDataSecureDesc')}</p>
-          </div>
-          <div>
-            <h4 className="font-semibold text-slate-900">{t('doINeedSoftware')}</h4>
-            <p className="text-xs text-slate-600 mt-1">{t('doINeedSoftwareDesc')}</p>
-          </div>
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">
+          <ShieldCheck className="w-4 h-4" /> Fast AI Processing
         </div>
       </div>
+
+      {!selectedFile ? (
+        <div 
+          className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center bg-white hover:border-indigo-500 transition-colors cursor-pointer shadow-sm"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files?.[0]) handleFileSelected(e.dataTransfer.files[0]);
+          }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Upload className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800">Upload an image for AI background removal</h3>
+          <p className="text-sm text-gray-500 mt-1">Supports JPG, PNG, WebP up to 50MB</p>
+          <button className="mt-6 px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-md">
+            Select Image
+          </button>
+          <input 
+            ref={fileInputRef} 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={(e) => e.target.files?.[0] && handleFileSelected(e.target.files[0])} 
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-800">Preview Studio</h3>
+                <button 
+                  onClick={() => setSelectedFile(null)}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+                >
+                  <RefreshCw className="w-4 h-4" /> Upload New Image
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 text-center">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 block mb-2">Original Image</span>
+                  <div className="h-64 flex items-center justify-center overflow-hidden bg-white rounded-lg border border-gray-100">
+                    <img src={originalUrl} alt="Original" className="max-h-full max-w-full object-contain" />
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 text-center">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 block mb-2">Processed Result (Transparent PNG)</span>
+                  <div className="h-64 flex items-center justify-center overflow-hidden rounded-lg border border-gray-100 relative" style={{ background: 'repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%) 50% / 16px 16px' }}>
+                    {(status === 'loading_model' || status === 'processing') ? (
+                      <div className="flex flex-col items-center justify-center gap-3 p-4 text-center bg-white/90 inset-0 absolute">
+                        <Cpu className="w-8 h-8 text-indigo-600 animate-pulse" />
+                        <span className="text-sm text-gray-700 font-medium">{progressMessage}</span>
+                      </div>
+                    ) : resultUrl ? (
+                      <img src={resultUrl} alt="Processed" className="max-h-full max-w-full object-contain" />
+                    ) : (
+                      <span className="text-sm text-gray-400">Click Remove Background to run AI</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {resultUrl && (
+                <div className="mt-6 flex justify-end gap-3">
+                  <a 
+                    href={resultUrl} 
+                    download="transparent-cutout.png"
+                    className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition shadow-md flex items-center gap-2"
+                  >
+                    <Download className="w-5 h-5" /> Download Transparent PNG
+                  </a>
+                </div>
+              )}
+
+              {errorMessage && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 shrink-0" /> {errorMessage}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-6">
+            <h3 className="font-semibold text-gray-800 border-b pb-3">AI Studio</h3>
+
+            <div className="flex flex-wrap gap-2">
+              <button 
+                onClick={() => setActiveTab('bg')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${activeTab === 'bg' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                AI Remove
+              </button>
+              <button 
+                onClick={() => setActiveTab('crop')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${activeTab === 'crop' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Resize
+              </button>
+              <button 
+                onClick={() => setActiveTab('adjust')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${activeTab === 'adjust' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Filters
+              </button>
+            </div>
+
+            {activeTab === 'bg' && (
+              <div className="space-y-4 pt-2">
+                <h4 className="text-sm font-semibold text-gray-700">AI Background Removal</h4>
+                <p className="text-xs text-gray-500">Extracts subject using high-performance background removal backend and returns transparent PNG.</p>
+                <button 
+                  onClick={() => processImageLocally('bg_remove')}
+                  disabled={status === 'loading_model' || status === 'processing'}
+                  className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Sparkles className="w-5 h-5" /> 
+                  {status === 'loading_model' ? 'Removing Background...' : status === 'processing' ? 'Processing...' : 'Remove Background (AI)'}
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'crop' && (
+              <div className="space-y-4 pt-2">
+                <h4 className="text-sm font-semibold text-gray-700">Resize Image</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">Width (px)</label>
+                    <input 
+                      type="number" 
+                      value={width} 
+                      onChange={(e) => setWidth(parseInt(e.target.value) || 400)}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 block mb-1">Height (px)</label>
+                    <input 
+                      type="number" 
+                      value={height} 
+                      onChange={(e) => setHeight(parseInt(e.target.value) || 400)}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                </div>
+                <button 
+                  onClick={() => processImageLocally('smart_crop')}
+                  className="w-full py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-sm"
+                >
+                  Resize Image
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'adjust' && (
+              <div className="space-y-4 pt-2">
+                <h4 className="text-sm font-semibold text-gray-700">Filters</h4>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 block mb-1">Blur: {blur}</label>
+                  <input 
+                    type="range" min="0" max="10" step="0.5" value={blur}
+                    onChange={(e) => setBlur(parseFloat(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+                <div className="flex items-center gap-4 pt-2">
+                  <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                    <input type="checkbox" checked={grayscale} onChange={(e) => setGrayscale(e.target.checked)} className="rounded text-indigo-600" /> Grayscale
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                    <input type="checkbox" checked={sepia} onChange={(e) => setSepia(e.target.checked)} className="rounded text-indigo-600" /> Sepia
+                  </label>
+                </div>
+                <button 
+                  onClick={() => processImageLocally('adjust')}
+                  className="w-full py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-sm"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

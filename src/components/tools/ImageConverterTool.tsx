@@ -65,14 +65,17 @@ export const ImageConverterTool: React.FC<ImageConverterToolProps> = ({
         body: formData,
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Cloudinary processing failed');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Cloudinary processing failed');
       }
 
-      setResultUrl(data.url);
-      setResultSize(data.bytes || imgFile.size);
+      const blob = await response.blob();
+      const cloudinaryUrl = response.headers.get('X-Cloudinary-Url') || URL.createObjectURL(blob);
+      const fileSize = parseInt(response.headers.get('X-File-Size') || blob.size.toString(), 10);
+
+      setResultUrl(cloudinaryUrl);
+      setResultSize(fileSize);
       setProcessingProgress(100);
     } catch (err) {
       console.error('Conversion error:', err);

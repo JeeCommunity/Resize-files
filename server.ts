@@ -8,6 +8,9 @@ import multer from 'multer';
 import { execSync } from 'child_process';
 import os from 'os';
 
+import { registerSharpRoutes } from './server/sharpProcessor';
+import { registerCloudinaryAdvancedRoutes } from './server/cloudinaryAdvanced';
+
 const DB_FILE = path.resolve(process.cwd(), 'analytics.db');
 let db: any = null;
 
@@ -579,6 +582,56 @@ async function startServer() {
       res.status(500).json({ error: err.message });
     }
   });
+
+  app.post('/api/background-removal', upload.single('file'), async (req, res) => {
+    let inputPath = req.file?.path;
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file provided' });
+      }
+
+      const externalUrl = 'https://background-removal.resizefiles.blitz.cloud/remove-background';
+      
+      // Read file into buffer or form
+      const fileBuffer = fs.readFileSync(inputPath);
+      
+      const formData = new FormData();
+      const blob = new Blob([fileBuffer]);
+      formData.append('file', blob, req.file.originalname || 'image.png');
+      formData.append('model', req.body.model || 'u2netp');
+
+      const response = await fetch(externalUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text().catch(() => 'Backend error');
+        try { if (inputPath) fs.unlinkSync(inputPath); } catch {}
+        return res.status(response.status).json({ error: `Background removal service error: ${errText}` });
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      try { if (inputPath) fs.unlinkSync(inputPath); } catch {}
+
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('X-Processing-Time', response.headers.get('X-Processing-Time') || '0');
+      res.send(buffer);
+
+    } catch (err: any) {
+      console.error('Background removal proxy error:', err);
+      try { if (inputPath) fs.unlinkSync(inputPath); } catch {}
+      res.status(500).json({ error: err.message || 'Background removal proxy failed' });
+    }
+  });
+
+  // Register Sharp Image Processing Routes
+  registerSharpRoutes(app);
+
+  // Register Cloudinary Advanced Routes
+  registerCloudinaryAdvancedRoutes(app);
 
   // Vite middleware for frontend
   const vite = await createViteServer({
