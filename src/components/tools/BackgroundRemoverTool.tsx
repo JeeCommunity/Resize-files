@@ -57,12 +57,11 @@ export const BackgroundRemoverTool: React.FC = () => {
     const response = await fetch("https://background-removal.resizefiles.blitz.cloud/remove-background", {
         method: "POST",
         body: formData
-        // Note: Do not pass custom headers (like Content-Type) when using FormData, 
-        // browser automatically sets multipart/form-data boundary!
     });
 
     if (!response.ok) {
-        throw new Error("Server error during background removal");
+        const errorText = await response.text().catch(() => 'Server error');
+        throw new Error(`Background removal failed (${response.status}): ${errorText}`);
     }
 
     const blob = await response.blob();
