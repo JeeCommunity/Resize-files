@@ -1,20 +1,18 @@
-FROM node:20-slim
-
-# Install Ghostscript
-RUN apt-get update && apt-get install -y ghostscript && rm -rf /var/lib/apt/lists/*
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy root package files and install dependencies
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy all source files
-COPY . .
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Build Vite frontend
-RUN npm run build
+COPY main.py .
 
-EXPOSE 3000
-CMD ["npm", "start"]
+EXPOSE 8080
 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

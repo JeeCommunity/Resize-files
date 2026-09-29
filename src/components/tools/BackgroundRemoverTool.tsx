@@ -54,20 +54,38 @@ export const BackgroundRemoverTool: React.FC = () => {
     formData.append("file", imageFile);
     formData.append("model", "u2netp"); // Fast, lightweight & zero-download model (~4.7 MB)
 
-    const response = await fetch("/api/background-removal", {
-        method: "POST",
-        body: formData
-    });
+    const endpoint = "https://background-removal.resizefiles.blitz.cloud/remove-background";
 
-    if (!response.ok) {
-        throw new Error(`Background removal failed with status ${response.status}`);
+    let lastError: any = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        if (attempt > 1) {
+          setProgressMessage('Server is waking up, retrying connection...');
+          await new Promise((res) => setTimeout(res, 3000));
+        }
+
+        const response = await fetch(endpoint, {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Background removal failed with status ${response.status}`);
+        }
+
+        // Server returns a transparent PNG blob
+        const blob = await response.blob();
+        const transparentImageUrl = URL.createObjectURL(blob);
+        return transparentImageUrl;
+      } catch (err) {
+        lastError = err;
+        if (attempt === 1) {
+          console.warn('First attempt failed, likely due to cold start. Retrying in 3s...', err);
+        }
+      }
     }
 
-    // Server returns a transparent PNG blob
-    const blob = await response.blob();
-    const transparentImageUrl = URL.createObjectURL(blob);
-    
-    return transparentImageUrl; // Use this URL in your <img> tag src
+    throw lastError || new Error('Background removal failed after retry.');
   }
 
   const processImageLocally = async (operationType: string) => {
@@ -77,7 +95,7 @@ export const BackgroundRemoverTool: React.FC = () => {
     try {
       if (operationType === 'bg_remove') {
         setStatus('loading_model');
-        setProgressMessage('Uploading image to background removal backend...');
+        setProgressMessage('Waking up the AI server, this can take up to 20 seconds on the first try...');
 
         const imageUrl = await removeBackgroundFromResizeFiles(selectedFile);
         if (!imageUrl) {
