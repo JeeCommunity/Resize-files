@@ -50,28 +50,39 @@ export const BackgroundRemoverTool: React.FC = () => {
   };
 
   async function removeBackgroundFromResizeFiles(imageFile: File) {
+    if (!imageFile) {
+        alert("⚠️ Error: Koi image select nahi ki gayi hai!");
+        return null;
+    }
+
+    alert("🚀 Step 1: Background removal process start ho gaya hai...");
+
     const formData = new FormData();
     formData.append("file", imageFile);
-    formData.append("model", "u2netp"); // Fast, lightweight & zero-download model (~4.7 MB)
+    formData.append("model", "u2netp");
 
     try {
-        const response = await fetch("https://background-removal.resizefiles.blitz.cloud/remove-background", {
+        alert("🌐 Step 2: Blitz Cloud server ko request bhej rahe hain...");
+
+        const response = await fetch("https://bgr2-0.resizefiles.blitz.cloud/remove-background", {
             method: "POST",
             body: formData
         });
 
+        alert("📥 Step 3: Server se response mil gaya! Status: " + response.status);
+
         if (!response.ok) {
-            throw new Error(`Background removal failed with status ${response.status}`);
+            const errText = await response.text();
+            throw new Error(`Server error (${response.status}): ${errText}`);
         }
 
-        // Server returns a transparent PNG blob
         const blob = await response.blob();
-        const transparentImageUrl = URL.createObjectURL(blob);
-        
-        return transparentImageUrl; // Use this URL in your <img> tag src
-    } catch (error) {
-        console.error("Background removal error:", error);
-        throw error;
+        alert("🎉 Step 4: Success! Transparent image mil gayi hai.");
+        return URL.createObjectURL(blob);
+    } catch (error: any) {
+        alert("❌ FAILED ERROR: " + error.message);
+        console.error(error);
+        return null;
     }
   }
 
