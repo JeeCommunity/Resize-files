@@ -52,21 +52,22 @@ export const BackgroundRemoverTool: React.FC = () => {
   async function removeBackgroundFromResizeFiles(imageFile: File) {
     const formData = new FormData();
     formData.append("file", imageFile);
-    formData.append("model", "u2netp"); // Fast & lightweight model
+    formData.append("model", "u2netp"); // Fast, lightweight & zero-download model (~4.7 MB)
 
-    const response = await fetch("/api/background-removal", {
+    const response = await fetch("https://background-removal.resizefiles.blitz.cloud/remove-background", {
         method: "POST",
         body: formData
     });
 
     if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Server error');
-        throw new Error(`Background removal failed (${response.status}): ${errorText}`);
+        throw new Error(`Background removal failed with status ${response.status}`);
     }
 
+    // Server returns a transparent PNG blob
     const blob = await response.blob();
-    const imageUrl = URL.createObjectURL(blob);
-    return imageUrl; // Transparent PNG image URL
+    const transparentImageUrl = URL.createObjectURL(blob);
+    
+    return transparentImageUrl; // Use this URL in your <img> tag src
   }
 
   const processImageLocally = async (operationType: string) => {
